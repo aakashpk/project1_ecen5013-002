@@ -4,12 +4,13 @@ include sources.mk
 
 TARGET=project1
 
+#CC=arm-linux-gnueabihf-gcc
 CC=gcc
 CSTD=c99
 
 INCLUDE=-I../inc
 
-TESTTARGET=projectTest
+TESTTARGET=project1Test
 
 TESTFLAG=-lcmocka
 
@@ -18,18 +19,27 @@ CFLAGS=-std=$(CSTD)\
 #	-O0\
 #	-Werror
 
-objects=$(sources:.c=.o)
+objects=$(SOURCES:.c=.o)
+
+TESTOBJECTS=$(TESTSOURCES:.c=.o)
+
 
 all:$(objects)
 	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
 	./$(TARGET)
 
-unittest:$(TESTOBJECTS)
-	$(CC) $(TESTOBJECTS) -o $(TESTTARGET) $(CFLAGS) $(INCLUDE) $(TESTFLAG)
-
+unittest:$(TESTSOURCES)
+	echo $(TESTOBJECTS) $(TESTSOURCES)
+	$(CC) $(TESTSOURCES) -o $(TESTTARGET) $(CFLAGS) $(INCLUDE) $(TESTFLAG)
+	./$(TESTTARGET)
 
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE)
+
+../test/%.o: test/%.c
+	echo $(TESTOBJECTS) $(TESTSOURCES)
+	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE)
+
 
 
 clean:

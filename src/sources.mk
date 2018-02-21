@@ -1,9 +1,9 @@
-sources=main.c\
+SOURCES=main.c\
 	lightsensor.c\
 	logger.c\
 	queue.c\
 	tempsensor.c
 
-TESTSOURCES=	
+TESTSOURCES=../test/simple_test.c	
 
 
