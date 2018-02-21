@@ -9,6 +9,9 @@ CC=gcc
 CSTD=c99
 
 INCLUDE=-I../inc
+#SOURCEDIR=src/
+#TESTDIR=test/
+#BINDIR=bin/
 
 TESTTARGET=project1Test
 
@@ -28,19 +31,15 @@ all:$(objects)
 	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
 	./$(TARGET)
 
-unittest:$(TESTSOURCES)
-	echo $(TESTOBJECTS) $(TESTSOURCES)
-	$(CC) $(TESTSOURCES) -o $(TESTTARGET) $(CFLAGS) $(INCLUDE) $(TESTFLAG)
+unittest:$(TESTOBJECTS)
+	$(CC) $(TESTOBJECTS) -o $(TESTTARGET) $(CFLAGS) $(INCLUDE) $(TESTFLAG)
 	./$(TESTTARGET)
 
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE)
 
-../test/%.o: test/%.c
-	echo $(TESTOBJECTS) $(TESTSOURCES)
-	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE)
-
-
 
 clean:
-	rm -f *.o *.elf
+	rm -f src/*.o test/*.o 
+	rm -f $(TESTTARGET) $(TARGET)
+
