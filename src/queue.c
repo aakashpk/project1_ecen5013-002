@@ -64,10 +64,6 @@ queue_status destroy_bdqueue(bdqueue* my_bdqueue)
     return QUEUE_SUCCESS;
 }
 
-// Blocking functions.
-
-//Could perhaps provide a non_blocking version of all of these which return a null pointer
-
 /*
 Called by requester
 Provides pointer to next available slot for writing request
@@ -87,28 +83,10 @@ void done_populating_request(bdqueue* my_bdqueue)
 
 /*
 Called by responder
-Provides pointer to next available slot for reading request
-*/
-uint8_t* next_request(bdqueue* my_bdqueue)
-{
-    return my_bdqueue->buffer_head;
-}
-
-/*
-Called by responder
 Advances response pointer to next available slot
 */
 void done_populating_response(bdqueue* my_bdqueue)
 {
-}
-
-/*
-Called by requester
-Provides pointer to next available response
-*/
-uint8_t* next_response(bdqueue* my_bdqueue)
-{
-    return my_bdqueue->buffer_head;
 }
 
 /*
@@ -119,4 +97,23 @@ void done_reading_response(bdqueue* my_bdqueue)
 {
 }
 
+// Blocking functions
+
+/*
+Called by responder
+Provides pointer to next available slot for reading request
+*/
+uint8_t* next_request(bdqueue* my_bdqueue)
+{
+    return my_bdqueue->buffer_head;
+}
+
+/*
+Called by requester
+Provides pointer to next available response
+*/
+uint8_t* next_response(bdqueue* my_bdqueue)
+{
+    return my_bdqueue->buffer_head;
+}
 
