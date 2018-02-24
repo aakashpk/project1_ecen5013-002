@@ -15,7 +15,7 @@
 
 
 
-#define I2CBUSNAME "/dev/i2c-2" 
+#define I2CBUSNAME "/dev/i2c-2"
 
 
 

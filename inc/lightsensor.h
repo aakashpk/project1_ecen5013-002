@@ -17,7 +17,7 @@
 
 #define LIGHT_SENSOR_ADDR 0x39
 
-#define I2CBUSNAME "/dev/i2c-2" 
+#define I2CBUSNAME "/dev/i2c-2"
 
 uint16_t get_light_value();
 

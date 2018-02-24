@@ -36,11 +36,11 @@ void temp_sensor_init();
 
 
 /**
- * @brief 
+ * @brief
  *
  * @param reg
  *
- * @return 
+ * @return
  */
 uint8_t write_reg_temp(uint8_t reg,uint8_t value);
 

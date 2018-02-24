@@ -8,18 +8,18 @@
 
 enum payload_type
 {
-	TEMPERATURE,
-	LIGHT,
-	SYSTEM
+    TEMPERATURE,
+    LIGHT,
+    SYSTEM
 }payload_t;
 
 
 typedef struct logdata_type
 {
-	struct timespec timestamp;
-	payload_t dtype;
-	uint32_t checksum;
-	float value; // TODO: change to double ??
+    struct timespec timestamp;
+    payload_t dtype;
+    uint32_t checksum;
+    float value; // TODO: change to double ??
 
 }logdata_t;
 
@@ -38,7 +38,7 @@ typedef struct logdata_type
  */
 logdata_t * createLog(logdata_t * log, payload_t dtype, float value);
 
-uint8_t add_log(logdata_t log); 
+uint8_t add_log(logdata_t log);
 //TODO: Add another parameter with the pointer to queue where the log has to be added to, and change return type accordingly
 
 uint32_t calc_checksum(float value,struct timespec timestamp, payload_t dtype);

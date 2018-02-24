@@ -43,56 +43,56 @@ enum queue_status
 // Non-Blocking functions
 
 /*
-note, wondering if element_size and num_elements should be passed through pointer, or as separate arguments. Could be dangerous and confusing for users if relying on filling-out these struct fields ahead of time.
-element_size and num_elements are both rounded-up to nearest power of 2, then multiplied for total queue size.
-creates dynamic memory
-Alligns on power of 2. Don't need to allocate double space for allignment, can use posix_memallign() or alligned_alloc(). Still wondering if bitwise operations on pointers are allowed though. https://stackoverflow.com/questions/227897/how-to-allocate-aligned-memory-only-using-the-standard-library
-initializes pointers and mask
-returns error status
-*/
+   note, wondering if element_size and num_elements should be passed through pointer, or as separate arguments. Could be dangerous and confusing for users if relying on filling-out these struct fields ahead of time.
+   element_size and num_elements are both rounded-up to nearest power of 2, then multiplied for total queue size.
+   creates dynamic memory
+   Alligns on power of 2. Don't need to allocate double space for allignment, can use posix_memallign() or alligned_alloc(). Still wondering if bitwise operations on pointers are allowed though. https://stackoverflow.com/questions/227897/how-to-allocate-aligned-memory-only-using-the-standard-library
+   initializes pointers and mask
+   returns error status
+   */
 queue_status initialize_bdqueue(bdqueue* my_bdqueue)
 {
     return QUEUE_SUCCESS;
 }
 
 /*
-note, this should be done last after threads depending on queue are killed.
-frees memory
-*/
+   note, this should be done last after threads depending on queue are killed.
+   frees memory
+   */
 queue_status destroy_bdqueue(bdqueue* my_bdqueue)
 {
     return QUEUE_SUCCESS;
 }
 
 /*
-Called by requester
-Provides pointer to next available slot for writing request
-*/
+   Called by requester
+   Provides pointer to next available slot for writing request
+   */
 uint8_t* next_empty_request(bdqueue* my_bdqueue)
 {
     return my_bdqueue->buffer_head;
 }
 
 /*
-Called by requester
-Advances request write pointer to next available slot
-*/
+   Called by requester
+   Advances request write pointer to next available slot
+   */
 void done_populating_request(bdqueue* my_bdqueue)
 {
 }
 
 /*
-Called by responder
-Advances response pointer to next available slot
-*/
+   Called by responder
+   Advances response pointer to next available slot
+   */
 void done_populating_response(bdqueue* my_bdqueue)
 {
 }
 
 /*
-Called by requester
-Frees item by advancing response read pointer to next available slot
-*/
+   Called by requester
+   Frees item by advancing response read pointer to next available slot
+   */
 void done_reading_response(bdqueue* my_bdqueue)
 {
 }
@@ -100,18 +100,18 @@ void done_reading_response(bdqueue* my_bdqueue)
 // Blocking functions
 
 /*
-Called by responder
-Provides pointer to next available slot for reading request
-*/
+   Called by responder
+   Provides pointer to next available slot for reading request
+   */
 uint8_t* next_request(bdqueue* my_bdqueue)
 {
     return my_bdqueue->buffer_head;
 }
 
 /*
-Called by requester
-Provides pointer to next available response
-*/
+   Called by requester
+   Provides pointer to next available response
+   */
 uint8_t* next_response(bdqueue* my_bdqueue)
 {
     return my_bdqueue->buffer_head;
