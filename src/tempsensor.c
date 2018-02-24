@@ -1,44 +1,63 @@
 #include "tempsensor.h"
 
-int main()
+uint8_t i2c_open_temp()
 {
+	uint8_t file;
+	file=i2c_open();
 
-	
-    int file;
-    char filename[40];
-    int addr = 0x48;        // The I2C address of temp sensor
+	if (ioctl(file,I2C_SLAVE,TEMP_SENSOR_ADDR) < 0) {
+	       	printf("Failed to acquire bus access and/or talk to slave.\n");
+        // ERROR HANDLING; 
+		exit(1);
+	}
 
-    sprintf(filename,"/dev/i2c-2");
-    if ((file = open(filename,O_RDWR)) < 0) {
-        printf("Failed to open the bus.");
-        /* ERROR HANDLING; you can check errno to see what went wrong */
-        exit(1);
-    }
+	return file;
+}
+	    
 
-    if (ioctl(file,I2C_SLAVE,addr) < 0) {
-        printf("Failed to acquire bus access and/or talk to slave.\n");
-        /* ERROR HANDLING; you can check errno to see what went wrong */
-        exit(1);
-    }
-	
-    	uint16_t temp;
+float get_temp(uint8_t unit)
+{
+	uint8_t file;
+
+	uint16_t temp;
 	float temperature;
-	uint8_t buf[2] = {0,0};
-	while(1)
-{
-	read(file,buf,2);
 
-	for(int i=0;i<2;i++)
-		printf("Byte %d is %x ",i,buf[i]);
-	printf("\n");
+	uint8_t buf[2] = {0,0};
+
+	file=i2c_open_temp(); // Open I2C bus with temp sensor addr
+	
+	read(file,buf,2); // read temp register
+
+	i2c_close(file); // Close file
+	
+	// Convert read values to temp reading
 	temp=(uint16_t)(buf[0]<<4);
 	temp|=buf[1]>>4;
-	printf("Final val is %x\n",temp);
+
+	if(temp>0x7FF) 
+		temperature=((~temp)+1)*0.0625;
 	temperature=temp*0.0625;
-	printf("Temperature is %lf degC , %lf\n"
-			,temperature,TODEGF(temperature));
-}
-	
+
+	// Convert degC to the requested unit 
+	//1 for degF, 2 for K, default - degC 
+	if(unit==0) return temperature;
+	else if(unit==1) return TODEGF(temperature);
+	else if(unit==2) return TODEGK(temperature);
+	else return temperature;	
 }
 
+uint8_t read_reg_temp(uint8_t offset)
+{
+
+}
+
+void temp_sensor_init()
+{
+
+}
+
+uint8_t write_reg_temp(uint8_t reg,uint8_t value)
+{
+
+}
 

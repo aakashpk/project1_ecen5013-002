@@ -2,13 +2,18 @@
 
 include sources.mk
 
+PLATFORM=HOST
+
 TARGET=project1
 
-#CC=arm-linux-gnueabihf-gcc
 CC=gcc
 CSTD=c99
 
-INCLUDE=-I../inc
+ifeq ($(PLATFORM),BBB)
+CC=arm-linux-gnueabihf-gcc
+endif
+
+INCLUDE=-I./inc
 #SOURCEDIR=src/
 #TESTDIR=test/
 #BINDIR=bin/
@@ -30,6 +35,11 @@ TESTOBJECTS=$(TESTSOURCES:.c=.o)
 all:$(objects)
 	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
 	./$(TARGET)
+
+bbb:$(objects)
+	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
+	scp $(TARGET) root@192.168.7.2:/home/proj1/$(TARGET)
+
 
 unittest:$(TESTOBJECTS)
 	$(CC) $(TESTOBJECTS) -o $(TESTTARGET) $(CFLAGS) $(INCLUDE) $(TESTFLAG)

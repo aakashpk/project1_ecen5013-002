@@ -1,5 +1,5 @@
-#ifndef LIGHTSENSOR_H
-#define LIGHTSENSOR_H
+#ifndef MY_I2C_H
+#define MY_I2C_H
 
 #include <stdint.h>
 #include <errno.h>
@@ -15,20 +15,14 @@
 #include <stdint.h>
 
 
-#define LIGHT_SENSOR_ADDR 0x39
 
 #define I2CBUSNAME "/dev/i2c-2" 
 
-uint16_t get_light_value();
 
 
-void light_sensor_init();
+uint8_t i2c_open();
 
-uint8_t i2c_open_light();
 
-uint8_t read_reg_light();
-
-uint8_t write_reg_light();
-
+void i2c_close(uint8_t file);
 
 #endif
