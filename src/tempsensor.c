@@ -31,8 +31,7 @@ float get_temp(uint8_t unit)
 	i2c_close(file); // Close file
 	
 	// Convert read values to temp reading
-	temp=(uint16_t)(buf[0]<<4);
-	temp|=buf[1]>>4;
+	temp = (*((uint16_t*)buf) >> 4);
 
 	if(temp>0x7FF) 
 		temperature=((~temp)+1)*0.0625;
