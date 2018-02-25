@@ -31,7 +31,10 @@ float get_temp(uint8_t unit)
     i2c_close(file); // Close file
 
     // Convert read values to temp reading
-    temp = (*((uint16_t*)buf) >> 4);
+    temp=(uint16_t)(buf[0]<<4);
+    temp|=buf[1]>>4;
+
+//    printf("b0:%x b1:%x temp:%x\n",buf[0],buf[1],temp);
 
     if(temp>0x7FF)
         temperature=((~temp)+1)*0.0625;
@@ -52,8 +55,11 @@ uint8_t read_reg_temp(uint8_t reg)
     if(pread(file,&buffer,1,reg)<0)
     {
         printf("Error reading from register");
+        i2c_close(file);
         exit(1);
     }
+
+    i2c_close(file);
     return buffer;
 }
 
@@ -66,11 +72,15 @@ void write_reg_temp(uint8_t reg,uint8_t value)
 {
     uint8_t file,buffer;
     file=i2c_open_temp();
+
     if(pwrite(file,&value,1,reg)<0)
     {
         printf("Error reading from register\n");
+        i2c_close(file);
         exit(1);
     }
+
+    i2c_close(file);
     //TODO: Add a return for this ??
-}    
+}
 

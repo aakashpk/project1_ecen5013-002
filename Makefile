@@ -33,12 +33,17 @@ TESTOBJECTS=$(TESTSOURCES:.c=.o)
 
 
 all:$(objects)
-	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
-	./$(TARGET)
-
-bbb:$(objects)
+ifeq ($(PLATFORM),BBB)
 	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
 	scp $(TARGET) root@192.168.7.2:/home/proj1/$(TARGET)
+else
+	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
+	./$(TARGET)
+endif
+
+#bbb:$(objects)
+#	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
+#	scp $(TARGET) root@192.168.7.2:/home/proj1/$(TARGET)
 
 
 unittest:$(TESTOBJECTS)
