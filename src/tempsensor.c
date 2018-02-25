@@ -45,10 +45,16 @@ float get_temp(uint8_t unit)
     else return temperature;
 }
 
-uint8_t read_reg_temp(uint8_t offset)
+uint8_t read_reg_temp(uint8_t reg)
 {
-    //
-
+    uint8_t file,buffer;
+    file=i2c_open_temp();
+    if(pread(file,&buffer,1,reg)<0)
+    {
+        printf("Error reading from register");
+        exit(1);
+    }
+    return buffer;
 }
 
 void temp_sensor_init()
@@ -56,8 +62,15 @@ void temp_sensor_init()
 
 }
 
-uint8_t write_reg_temp(uint8_t reg,uint8_t value)
+void write_reg_temp(uint8_t reg,uint8_t value)
 {
-
-}
+    uint8_t file,buffer;
+    file=i2c_open_temp();
+    if(pwrite(file,&value,1,reg)<0)
+    {
+        printf("Error reading from register\n");
+        exit(1);
+    }
+    //TODO: Add a return for this ??
+}    
 

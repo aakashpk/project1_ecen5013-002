@@ -1,6 +1,10 @@
 #ifndef MY_I2C_H
 #define MY_I2C_H
 
+
+#define _XOPEN_SOURCE 500
+
+
 #include <stdint.h>
 #include <errno.h>
 #include <stdio.h>

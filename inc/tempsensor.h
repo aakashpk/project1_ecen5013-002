@@ -9,6 +9,9 @@
 
 #define TODEGF(c) (((c)*9/5)+32)
 
+#define CONFIG 1
+#define TLOW 2
+#define THIGH 3
 
 uint8_t i2c_open_temp();
 
@@ -42,7 +45,7 @@ void temp_sensor_init();
  *
  * @return
  */
-uint8_t write_reg_temp(uint8_t reg,uint8_t value);
+void write_reg_temp(uint8_t reg,uint8_t value);
 
 
 
