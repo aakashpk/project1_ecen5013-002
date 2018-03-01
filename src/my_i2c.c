@@ -4,7 +4,7 @@
 
 uint8_t i2c_open()
 {
-    int file;
+    uint8_t file;
     if ((file = open(I2CBUSNAME,O_RDWR)) < 0)
     {
         printf("Failed to open the bus.");

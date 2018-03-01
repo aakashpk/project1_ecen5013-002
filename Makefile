@@ -7,7 +7,8 @@ PLATFORM=HOST
 TARGET=project1
 
 CC=gcc
-CSTD=c99
+CSTD=
+#CSTD=c99
 
 ifeq ($(PLATFORM),BBB)
 CC=arm-linux-gnueabihf-gcc
@@ -22,7 +23,9 @@ TESTTARGET=project1Test
 
 TESTFLAG=-lcmocka
 
-CFLAGS=-std=$(CSTD)\
+CFLAGS=-Wall
+
+#CFLAGS=-std=$(CSTD)\
 	-Wall
 #	-O0\
 #	-Werror

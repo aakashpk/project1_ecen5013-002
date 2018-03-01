@@ -13,6 +13,8 @@
 #define TLOW 2
 #define THIGH 3
 
+#define U16TOTEMPOUT(reg_16) (((((reg_16)>>4)&0x00F0)|(((reg_16)<<8)&0xFF00))>>4)
+
 uint8_t i2c_open_temp();
 
 /**
