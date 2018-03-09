@@ -6,7 +6,6 @@
 
 
 #include <stdint.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -15,8 +14,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdint.h>
-
+//#include <i2c/smbus.h>
 
 
 #define I2CBUSNAME "/dev/i2c-2"

@@ -1,38 +1,50 @@
+
+
+#ifdef BBB
 #include "tempsensor.h"
 #include "lightsensor.h"
-
+#else
+#include "dummydata.h"
+#endif
 int main()
 {
-    uint8_t file,t=0x01;
-    float temperature;
-    uint8_t buf[8]={1,1,1,1,1,1,1,1};
-    while(1)
+    #ifndef BBB
+    // Code that will execute only on host
+    //while(1)
     {
-        
-        temperature=get_temp(0);
-        printf("Temperature is %lf degC, %lf degF, %lf degK\n",
-                temperature, TODEGF(temperature), TODEGK(temperature));
-      //  printf("TLOW:0x %x, THIGH:0x%x\n",read_reg_temp(2),read_reg_temp(3));
+        printf("Temperature is %lf , light is %lf\n",get_temp(),get_light());
+    }
+    
+    #endif
 
-         /*
-    //file=i2c_open_temp();
-    file=open(I2CBUSNAME,O_RDWR);
-    ioctl(file,I2C_SLAVE,TEMP_SENSOR_ADDR) ;
+    #ifdef BBB
+    // Code that will execute only on BBB
+    printf("TLOW:%x, THIGH:%x\n",(read_reg_temp(TLOW)),read_reg_temp(THIGH));
 
-    write(file,&t,1);
+    int file;
+    uint8_t a=0x03;
+    uint16_t b=0xabcd;
+//    uint8_t c=0xef;
+  //  uint8_t d=0xab;
+    file=open(I2CBUSNAME,O_WRONLY);
+    ioctl(file,I2C_SLAVE,TEMP_SENSOR_ADDR);
+    printf("%d\n",write(file,&a,2));
+    //printf("%d : val: %x\n",write(file,&b,3),b);
+    printf("%d\n",write(file,&b,3));
+//    printf("%d\n",write(file,&d,3));
+    close(file);
 
-    read(file,buf,2);
-
-    for(uint8_t i=0;i<8;i++)
+    
+//    while(1)
     {
-        //buf[i]=i2c_smbus_read_word_data(file, i);
-        //buf[i]=i2c_smbus_read_byte_data ( file , i );
-        printf("%d:%x ",i,buf[i]);
-    }
-    //i2c_smbus_write_byte_data ( file , 0x0a , val8 );
-    printf("\n");
-    i2c_close(file);
-*/
+     //write_reg_temp(TEMP_VAL,0x00);
+      
+    printf("Config reg:0x%x, ",(read_reg_temp(CONFIG)));
+    printf("Temp:%lf degC, ",
+                get_temp(0) );
+    printf("TLOW:%x, THIGH:%x\n",(read_reg_temp(TLOW)),read_reg_temp(THIGH));
+
     }
 
+    #endif
 }

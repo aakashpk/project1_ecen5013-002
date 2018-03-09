@@ -3,25 +3,10 @@
 include sources.mk
 
 PLATFORM=HOST
-
 TARGET=project1
 
 CC=gcc
-CSTD=
 #CSTD=c99
-
-ifeq ($(PLATFORM),BBB)
-CC=arm-linux-gnueabihf-gcc
-endif
-
-INCLUDE=-I./inc
-#SOURCEDIR=src/
-#TESTDIR=test/
-#BINDIR=bin/
-
-TESTTARGET=project1Test
-
-TESTFLAG=-lcmocka
 
 CFLAGS=-Wall
 
@@ -30,23 +15,31 @@ CFLAGS=-Wall
 #	-O0\
 #	-Werror
 
-objects=$(SOURCES:.c=.o)
+ifeq ($(PLATFORM),BBB)
+CC=arm-linux-gnueabihf-gcc
+OBJECTS=$(COMMON_SOURCES:.c=.o) $(BBB_SOURCES:.c=.o)
+CFLAGS+=-DBBB
+else
+OBJECTS=$(COMMON_SOURCES:.c=.o) $(HOST_SOURCES:.c=.o)
+endif
+
+INCLUDE=-I./inc
+
+TESTTARGET=project1Test
+
+TESTFLAG=-lcmocka
 
 TESTOBJECTS=$(TESTSOURCES:.c=.o)
 
 
-all:$(objects)
+all:$(OBJECTS)
 ifeq ($(PLATFORM),BBB)
-	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
+	$(CC) $(OBJECTS) -o $(TARGET) $(CFLAGS) $(INCLUDE)
 	scp $(TARGET) root@192.168.7.2:/home/proj1/$(TARGET)
 else
-	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
+	$(CC) $(OBJECTS) -o $(TARGET) $(CFLAGS) $(INCLUDE)
 	./$(TARGET)
 endif
-
-#bbb:$(objects)
-#	$(CC) $(objects) -o $(TARGET) $(CFLAGS) $(INCLUDE)
-#	scp $(TARGET) root@192.168.7.2:/home/proj1/$(TARGET)
 
 
 unittest:$(TESTOBJECTS)

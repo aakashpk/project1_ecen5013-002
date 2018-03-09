@@ -17,27 +17,18 @@ uint8_t i2c_open_temp()
 
 float get_temp(uint8_t unit)
 {
-    uint8_t file;
-
     uint16_t temp,temp1;
     float temperature;
 
-//    uint8_t buf[2] = {0,0};
-
-    file=i2c_open_temp(); // Open I2C bus with temp sensor addr
-
-    read(file,&temp,1); // read temp register
-
-    i2c_close(file); // Close file
+    temp=read_reg_temp(TEMP_VAL); // read temperature register
 
     // Convert read values to temp reading
 
     // The 16 bit read value is in byte0 byte1 format change it
     // to byte 1 byte0 and shift 4 bits to remove last 4 unused bits
     temp1=U16TOTEMPOUT(temp);
-    //temp1=((((temp>>4)&0x00F0)|((temp<<8)&0xFF00))>>4);
 
-    printf("temp:0x%x temp1:0x%x \n",temp,temp1);
+//    printf("temp:0x%x temp1:0x%x \n",temp,temp1);
 
     if(temp1>0x7FF)
         temperature=((~temp1)+1)*0.0625;
@@ -51,11 +42,16 @@ float get_temp(uint8_t unit)
     else return temperature;
 }
 
-uint8_t read_reg_temp(uint8_t reg)
+uint16_t read_reg_temp(uint8_t reg)
 {
-    uint8_t file,buffer;
+    uint8_t file;
+    uint16_t buffer;
+
     file=i2c_open_temp();
-    if(pread(file,&buffer,1,reg)<0)
+    
+    write(file,&reg,1); // Write to bus, which register has to be read
+
+    if(read(file,&buffer,2)<0)
     {
         printf("Error reading from register");
         i2c_close(file);
@@ -71,19 +67,23 @@ void temp_sensor_init()
 
 }
 
-void write_reg_temp(uint8_t reg,uint8_t value)
+void write_reg_temp(uint8_t reg,uint16_t value)
 {
-    uint8_t file,buffer;
+    uint8_t file;
+
     file=i2c_open_temp();
 
-    if(pwrite(file,&value,1,reg)<0)
+    write(file,&reg,1);
+
+    if(write(file,&value,3)!=1)
     {
-        printf("Error reading from register\n");
+        printf("Error writing to register\n");
         i2c_close(file);
         exit(1);
     }
 
     i2c_close(file);
+
     //TODO: Add a return for this ??
 }
 
