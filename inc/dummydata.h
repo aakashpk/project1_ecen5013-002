@@ -12,9 +12,18 @@
 #define LIGHT_MIN 50
 
 time_t t;
-
+/**
+ * @brief Get the temp object
+ * 
+ * @return float 
+ */
 float get_temp();
 
+/**
+ * @brief Get the light object
+ * 
+ * @return float 
+ */
 float get_light();
 
 #endif

@@ -1,27 +1,61 @@
 #include "lightsensor.h"
 
 
-void light_sensor_init()
+int8_t light_sensor_init()
 {
+    int ret;
 
+    // Turn on sensor by writing 0x03 to the control register
+    ret=write_reg_light_byte(CONTROL,TURN_ON);
+    if(ret<0) return ret;
+
+    uint8_t time_reg;
+    time_reg=read_reg_light_byte(TIMING);
+    time_reg|=HIGH_GAIN;
+    
+    // Set gain to high gain
+    ret=write_reg_light_byte(TIMING,time_reg);
+    if(ret<0) return ret;
+
+    return 0;
+    
 }
 
-uint8_t i2c_open_light()
+int8_t i2c_open_light()
 {
-    uint8_t file;
+    int file;
     file = i2c_open();
-    if (ioctl(file,I2C_SLAVE,LIGHT_SENSOR_ADDR) < 0) {
-        printf("Failed to acquire bus access and/or talk to slave.\n");
-        // ERROR HANDLING;
-        exit(1);
+    if (ioctl(file,I2C_SLAVE,LIGHT_SENSOR_ADDR) < 0) 
+    {
+        perror("Light sensor IOCTL failed"); // ERROR HANDLING;
+        return -1;
     }
 
     return file;
+}
 
+uint8_t read_reg_light_byte(uint8_t reg)
+{
+    uint8_t file;
+    uint8_t buffer;
+
+    file=i2c_open_light();
+    
+    write(file,&reg,1); // Write to bus, which register has to be read
+
+    if(read(file,&buffer,1)<0)
+    {
+        perror("Error reading from register");
+        i2c_close(file);
+        return -1;
+    }
+
+    i2c_close(file);
+    return buffer;
 
 }
 
-uint8_t read_reg_light()
+uint16_t read_reg_light_word(uint8_t reg)
 {
     uint8_t file;
     uint16_t buffer;
@@ -32,9 +66,9 @@ uint8_t read_reg_light()
 
     if(read(file,&buffer,2)<0)
     {
-        printf("Error reading from register");
+        perror("Error reading from register");
         i2c_close(file);
-        exit(1);
+        return -1;
     }
 
     i2c_close(file);
@@ -42,29 +76,44 @@ uint8_t read_reg_light()
 
 }
 
-uint8_t write_reg_light()
+
+
+int8_t write_reg_light_byte(uint8_t reg,uint8_t value)
 {
+    uint8_t file;
+
+    file=i2c_open_light();
+
+    write(file,&reg,1);
+
+    if(write(file,&value,1)<0)
+    {
+        perror("Error writing to file");
+        i2c_close(file);
+        return -1;
+    }
+
+    i2c_close(file);
+
+    return 0;
 
 }
 
-
-
-uint16_t get_light_value()
+int8_t write_reg_light_word(uint8_t reg,uint16_t value)
 {
+    uint8_t file;
 
+    file=i2c_open_light();
 
-    int file;
-    char filename[40];
-    int addr = 0x39;        // The I2C address of light sensor
+    write(file,&reg,1);
 
-    sprintf(filename,"/dev/i2c-2");
-    file = open(filename,O_RDWR);
-    ioctl(file,I2C_SLAVE,addr);
+    if(write(file,&value,4)<0)
+    {
+        perror("Error writing to file");
+        i2c_close(file);
+        return -1;
+    }
 
-        read(file,buf,16);
-
-        for(int i=0;i<16;i++)
-            printf("%x:%x, ",i,buf[i]);
-        printf("\n");
+    i2c_close(file);
 
 }
