@@ -7,7 +7,25 @@
  * @date 2018-02-20
  */
 
+#include <stdio.h>
+#include <stdint.h>
+#include <pthread.h>
+
 // Todo - copy some of this stuff to header
+
+
+// http://locklessinc.com/articles/next_pow2/
+// Only for GCC
+static __attribute__((noinline)) size_t next_pow2(size_t x)
+{
+    // Below formula does not handle 0 and 1 correctly.
+    // Also faster to handle 2 here too.
+    if (x <= 2) return x;
+
+    // TODO - ensure this works the same on 32-bit architecture
+    // May need to choose clz vs clzll
+    return (1UL << (sizeof(size_t) * 8 - 1)) >> (__builtin_clzll(x - 1) - 1);
+}
 
 /**
  * @brief Single bidirectional circular buffer for each requester/responder
@@ -17,7 +35,7 @@
  * completely filling. This also allows responder to just fill in some struct
  * fields without needing to copy back overhead into a separate response queue.
  */
-typedef struct bdqueue
+typedef struct
 {
     uint8_t* buffer_head; // not required if can allocate on power-of-2 boundary.
     uint8_t* requester_write_pointer;
@@ -32,13 +50,13 @@ typedef struct bdqueue
     size_t num_elements;
     uint64_t buffer_mask; // = size-1;
     uint64_t buffer_inv_mask; // = ~buffer_mask;
-};
+} bdqueue;
 
-enum queue_status
+typedef enum
 {
     QUEUE_SUCCESS,
     QUEUE_FAILURE,
-}
+} queue_status;
 
 // Non-Blocking functions
 
@@ -117,3 +135,11 @@ uint8_t* next_response(bdqueue* my_bdqueue)
     return my_bdqueue->buffer_head;
 }
 
+int main()
+{
+    for (size_t s = 0; s < 10; s++)
+    {
+        printf("%zu %zu\n", s, next_pow2(s));
+    }
+    return 0;
+}
