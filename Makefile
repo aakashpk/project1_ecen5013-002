@@ -6,31 +6,47 @@ PLATFORM=HOST
 TARGET=project1
 
 CC=gcc
-#CSTD=c99
+CSTD=c99
 
-CFLAGS=-Wall
+INCLUDE=-I./inc
 
-#CFLAGS=-std=$(CSTD)\
+
+CFLAGS=-std=$(CSTD)\
 	-Wall
 #	-O0\
 #	-Werror
 
+MOCKED_FUNCTIONS=read_reg_temp\
+	read_reg_light_word
+
+WRAP_FLAG=-Wl,--wrap=
+WRAPPED_FUNCTIONS=$(addprefix $(WRAP_FLAG),$(MOCKED_FUNCTIONS))
+
+TESTFLAGS=-lcmocka
+
+#objest files for different scenarios
+MAIN_OBJECT=$(MAIN_SOURCE:.c=.o)
+COMMON_OBJECTS=$(COMMON_SOURCES:.c=.o)
+BBB_OBJECTS=$(BBB_SOURCES:.c=.o)
+HOST_OBJECTS=$(HOST_SOURCES:.c=.o)
+
+TEST_TARGETS=$(TEST_SOURCES:.c=.test)
+
+
 ifeq ($(PLATFORM),BBB)
 CC=arm-linux-gnueabihf-gcc
-OBJECTS=$(COMMON_SOURCES:.c=.o) $(BBB_SOURCES:.c=.o)
+OBJECTS= $(COMMON_OBJECTS) $(BBB_OBJECTS) $(MAIN_OBJECT)
 CFLAGS+=-DBBB
 else
-OBJECTS=$(COMMON_SOURCES:.c=.o) $(HOST_SOURCES:.c=.o)
+OBJECTS=$(COMMON_OBJECTS) $(HOST_OBJECTS) $(MAIN_OBJECT)
 endif
 
-INCLUDE=-I./inc
+#rule to run unit tests
+unittest:$(TEST_TARGETS)
 
-TESTTARGET=project1Test
-
-TESTFLAG=-lcmocka
-
-TESTOBJECTS=$(TESTSOURCES:.c=.o)
-
+%.test:%.c $(BBB_OBJECTS) $(COMMON_OBJECTS)
+	$(CC) $< $(COMMON_OBJECTS) $(BBB_OBJECTS) -o $@ $(CFLAGS) $(INCLUDE) $(TESTFLAGS) $(WRAPPED_FUNCTIONS)
+	./$@
 
 all:$(OBJECTS)
 ifeq ($(PLATFORM),BBB)
@@ -41,16 +57,10 @@ else
 	./$(TARGET)
 endif
 
-
-unittest:$(TESTOBJECTS)
-	$(CC) $(TESTOBJECTS) -o $(TESTTARGET) $(CFLAGS) $(INCLUDE) $(TESTFLAG)
-	./$(TESTTARGET)
-
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE)
 
-
 clean:
 	rm -f src/*.o test/*.o 
-	rm -f $(TESTTARGET) $(TARGET)
+	rm -f $(TEST_TARGETS) $(TARGET)
 

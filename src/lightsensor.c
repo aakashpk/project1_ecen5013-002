@@ -115,5 +115,6 @@ int8_t write_reg_light_word(uint8_t reg,uint16_t value)
     }
 
     i2c_close(file);
+    return 0;
 
 }

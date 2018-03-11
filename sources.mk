@@ -1,4 +1,6 @@
-COMMON_SOURCES=src/main.c\
+MAIN_SOURCE=src/main.c
+
+COMMON_SOURCES=
 #	src/logger.c\
 	src/queue.c
 
@@ -9,8 +11,10 @@ BBB_SOURCES=src/tempsensor.c\
 
 HOST_SOURCES=src/dummydata.c
 
-TESTSOURCES=test/simple_test.c\
-	test\sensor_test.c\
-	test\bd_queue_test.c	
+TEST_SOURCES=test/sensor_test.c\
+#	test/simple_test.c
+
+MOCKED_FUNCTIONS=
+#	test/bd_queue_test.c	
 
 

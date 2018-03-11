@@ -10,10 +10,10 @@
 #include "lightsensor.h"
 #include "sensortask.h"
 
-static void check_read_reg_temp(void)
+/*static void check_read_reg_temp(void)
 {
     expect_value(__wrap_read_reg_temp, reg, (uint8_t)0x00);
-}
+}*/
 
 /**
  * @brief mocked function for returning temp register read
