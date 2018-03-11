@@ -31,7 +31,178 @@ static __attribute__((noinline)) size_t next_pow2(size_t x)
     return (1UL << (sizeof(size_t) * 8 - 1)) >> (__builtin_clzll(x - 1) - 1);
 }
 
-/**
+typedef struct
+{
+    uint8_t* buffer_base;
+    size_t element_size;
+    //size_t total_elements; // probably unnecessary
+    //size_t request_count; // probably unnecessary
+    uintptr_t buffer_mask; // = size-1;
+    //uintptr_t buffer_inv_mask; // = ~buffer_mask;
+
+} common_queue_attributes;
+
+typedef struct queue_boundary queue_boundary;
+struct queue_boundary
+{
+    uint8_t *active_element; // Active element. May be NULL if no longer active)
+    uint8_t *next_element; // Next element to activate. Always points to a valid address
+    pthread_cond_t *blocking_cv; // If CV not null, will block advancing to next until signaled by next_boundary.
+    pthread_mutex_t *blocking_m; // Associated mutex for above CV
+    queue_boundary *previous_boundary; // What this boundary gates
+    queue_boundary *next_boundary; // What this boundary is gated by
+    common_queue_attributes *attr; // Pointer to commom queue attributes for advancement calculations
+};
+
+void init_boundary(queue_boundary *b,
+                   queue_boundary *next_b,
+                   common_queue_attributes *attr,
+                   bool blocked_by_next)
+{
+    b->attr = attr;
+    b->active_element = NULL;
+    b->next_element = attr->buffer_base;
+    b->next_boundary = next_b;
+    // Configures next's previous pointer
+    b->next_boundary->previous_boundary = b;
+
+    if (blocked_by_next)
+    {
+        b->blocking_cv = malloc(sizeof(pthread_cond_t));
+        b->blocking_m = malloc(sizeof(pthread_mutex_t));
+        if (!b->blocking_cv || !b->blocking_m)
+        {
+            printf("error with malloc cv or mutex");
+            abort();
+        }
+        // Todo - may want to double-check that there are no special attributes to pass
+        if (pthread_cond_init(b->blocking_cv, NULL) ||
+            pthread_mutex_init(b->blocking_m, NULL))
+        {
+            perror("issue with cv or mutex init");
+            abort();
+        }
+    }
+    else
+    {
+        b->blocking_cv = NULL;
+        b->blocking_m = NULL;
+    }
+}
+
+void destroy_boundary(queue_boundary *b)
+{
+    // Destroy malloc-ed items if they exist
+    if (b->blocking_cv)
+    {
+        pthread_cond_destroy(b->blocking_cv);
+        free(b->blocking_cv);
+        b->blocking_cv = NULL;
+    }
+    if (b->blocking_m)
+    {
+        pthread_mutex_destroy(b->blocking_m);
+        free(b->blocking_m);
+        b->blocking_m = NULL;
+    }
+    // Reset other elements to NULL
+    // Not super important
+    b->attr = NULL;
+    b->active_element = NULL;
+    b->next_element = NULL;
+    b->next_boundary = NULL;
+    b->previous_boundary = NULL;
+}
+
+
+uint8_t *boundary_get_next_active_element(queue_boundary *b)
+{
+    if (!b) abort();
+    if (!b->next_element) abort();
+
+    if ((b->next_element == b->next_boundary->active_element) ||
+        (b->next_element == b->next_boundary->next_element))
+    {
+        // Boundary conflict
+        if (b->blocking_cv)
+        {
+            if (!b->blocking_m) abort();
+
+            // Block on next boundary
+            pthread_mutex_lock(b->blocking_m);
+            pthread_cond_wait(b->blocking_cv, b->blocking_m);
+            pthread_mutex_unlock(b->blocking_m);
+
+            // Do another error check just for debugging purposes
+            if ((b->next_element == b->next_boundary->active_element) ||
+                (b->next_element == b->next_boundary->next_element))
+                abort();
+        }
+        else
+        {
+            // Non-Blocking case
+            return NULL;
+        }
+    }
+
+    // No boundary conflict here
+
+    // Not allowing multiple active elements.
+    // Forces previous active element to advance if not NULL.
+    // So signal previous boundary if active element is not NULL.
+
+    // Could also just call this function here more overhead in exchange for less code duplication
+    //if (b->active_element) boundary_done_with_active_element(b);
+
+    if (b->active_element &&
+        b->previous_boundary->blocking_cv)
+    {
+        if (!b->previous_boundary->blocking_m) abort();
+
+        // Signal previous boundary
+        pthread_mutex_lock(b->previous_boundary->blocking_m);
+        pthread_cond_signal(b->previous_boundary->blocking_cv);
+        pthread_mutex_unlock(b->previous_boundary->blocking_m);
+    }
+
+    // No need for data protection mutex if active element set before advancing next.
+    // Previous boundary will be effectively blocked
+
+    // Advance to next element
+    b->active_element = b->next_element;
+
+    // Set next element location (accounting for wrap-around)
+    b->next_element = (uint8_t*)((uintptr_t)b->attr->buffer_base +
+        ((uintptr_t)(b->next_element + b->attr->element_size) & b->attr->buffer_mask));
+
+    return b->active_element;
+}
+
+void boundary_done_with_active_element(queue_boundary *b)
+{
+    if (!b) abort();
+    if (!b->active_element)
+    {
+        printf("element already inactive\n");
+        abort(); // Not a critical error
+        return;
+    }
+
+    // Disable active element
+    b->active_element = NULL;
+
+    // Signal potentially waiting thread
+    if (b->previous_boundary->blocking_cv)
+    {
+        if (!b->previous_boundary->blocking_m) abort();
+
+        // Signal previous boundary
+        pthread_mutex_lock(b->previous_boundary->blocking_m);
+        pthread_cond_signal(b->previous_boundary->blocking_cv);
+        pthread_mutex_unlock(b->previous_boundary->blocking_m);
+    }
+}
+    /**
  * @brief Single bidirectional circular buffer for each requester/responder
  * pair to support 2-way request/response communication (bdqueue). Requires
  * pair of read/write pointers for requester (main) and responder (task). This
@@ -41,22 +212,27 @@ static __attribute__((noinline)) size_t next_pow2(size_t x)
  */
 typedef struct
 {
-    uint8_t* buffer_base; // not required if can allocate on power-of-2 boundary, although makes calculations easier.
-    uint8_t* requester_write_pointer;
-    uint8_t* responder_read_pointer;
-    uint8_t* responder_write_pointer;
-    uint8_t* requester_read_pointer;
-    pthread_mutex_t requester_wrote_m;
-    pthread_mutex_t responder_wrote_m;
-    pthread_cond_t requester_wrote_cv;
-    pthread_cond_t responder_wrote_cv;
-    size_t element_size;
-    size_t total_elements; // probably unnecessary
-    size_t request_count; // probably unnecessary
-    uintptr_t buffer_mask; // = size-1;
-    uintptr_t buffer_inv_mask; // = ~buffer_mask;
+    common_queue_attributes attr;
+    queue_boundary write_request_b;
+    queue_boundary read_request_b;
+    queue_boundary write_response_b;
+    queue_boundary read_response_b;
 } bdqueue;
 
+
+/*
+    Requester Writing
+    Responder Not Yet Wrote
+    Responder Wrote
+    responder
+
+
+
+    Requester Readed
+    Requester Reading
+
+
+*/
 typedef enum
 {
     QUEUE_SUCCESS,
@@ -82,26 +258,56 @@ queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements
     // Must have valid pointer and non-zero element size and num
     if (!q || !element_size || !total_elements) return QUEUE_FAILURE;
 
-    q->element_size = next_pow2(element_size);
-    q->total_elements = next_pow2(total_elements);
+    element_size = next_pow2(element_size);
+    total_elements = next_pow2(total_elements);
 
-    size_t total_size = q->element_size * q->total_elements;
+    size_t total_size = element_size * total_elements;
 
     // Allocate total memory on alligned address
-    q->buffer_base = aligned_alloc(total_size, total_size);
+    q->attr.buffer_base = aligned_alloc(total_size, total_size);
 
     // Check that alloc succeeded
-    if (!q->buffer_base) return QUEUE_FAILURE;
+    if (!q->attr.buffer_base) return QUEUE_FAILURE;
 
-    // TODO set other required members
-    q->requester_write_pointer = NULL;
-    q->responder_read_pointer = NULL;
-    q->responder_write_pointer = NULL;
-    q->requester_read_pointer = NULL;
+    q->attr.element_size = element_size;
+    q->attr.buffer_mask = (uintptr_t)(total_size - 1);
 
-    q->request_count = 0;
-    q->buffer_mask = (uintptr_t)(total_size - 1);
-    q->buffer_inv_mask = ~(q->buffer_mask);
+    /*
+        In order of buffer addresses (ignoring wrap around)
+        low > high
+        read_response > write_response > read_request > write_request
+        prev > next
+        Actual initial boundary progression happens in reverse order,
+        but we keep the above prev/next naming scheme.
+    */
+    init_boundary(
+        &q->read_response_b,
+        &q->write_response_b,
+        &q->attr,
+        true); // Requester read_response blocked by Responder write_response
+
+    init_boundary(
+        &q->write_response_b,
+        &q->read_request_b,
+        &q->attr,
+        false); // Responder write_response NOT blocked by Responder read_request
+
+    init_boundary(
+        &q->read_request_b,
+        &q->write_request_b,
+        &q->attr,
+        true); // Responder read_request blocked by Requester write_request
+
+    init_boundary(
+        &q->write_request_b,
+        &q->read_response_b,
+        &q->attr,
+        false); // Requester write_request NOT blocked by Requester read_response
+
+    // TODO - this starting logic is not quite right yet
+    // Need to start write request on separate index
+    // Assuming size is at least 2 elements
+    q->write_request_b.next_element = (uint8_t*)((uintptr_t)q->attr.buffer_base + (uintptr_t)(q->attr.element_size));
 
     return QUEUE_SUCCESS;
 }
@@ -113,17 +319,18 @@ queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements
 queue_status bdqueue_destroy(bdqueue* q)
 {
     // Not a critical check, but likely points to an error elsewhere
-    if (!q->buffer_base) return QUEUE_FAILURE;
+    if (!q->attr.buffer_base) return QUEUE_FAILURE;
 
-    free(q->buffer_base);
+    free(q->attr.buffer_base);
+    q->attr.buffer_base = NULL;
 
-    // TODO clear other members
-    q->requester_write_pointer = NULL;
-    q->responder_read_pointer = NULL;
-    q->responder_write_pointer = NULL;
-    q->requester_read_pointer = NULL;
+    q->attr.buffer_mask = 0;
+    q->attr.element_size = 0;
 
-    q->request_count = 0;
+    destroy_boundary(&q->read_response_b);
+    destroy_boundary(&q->write_response_b);
+    destroy_boundary(&q->read_request_b);
+    destroy_boundary(&q->write_request_b);
 
     return QUEUE_SUCCESS;
 }
@@ -132,83 +339,52 @@ queue_status bdqueue_destroy(bdqueue* q)
    Called by requester.
    Provides pointer to next available slot for writing request.
    Does not block, since requester is responsible for reading response.
-   Returns NULL if called in-error.
    */
 uint8_t* bdqueue_next_empty_request(bdqueue* q)
 {
-    if ((!q) || // Null queue
-       (q->request_count >= q->total_elements)) // Queue full
-    {
-        printf("Error - Null queue or full of requests");
-        return NULL;
-    }
-    // TODO - Tracking request_count seems like cleanest solution
+    if (!q) abort();
 
-    q->request_count++;
-
-    // Create first request if none yet
-    if (q->requester_write_pointer == NULL)
-    {
-        q->requester_write_pointer = q->buffer_base;
-        // No need for request_count
-        return q->requester_write_pointer;
-    }
-
-    // Set next write location (accounting for wrap-around)
-    q->requester_write_pointer = (uint8_t*)((uintptr_t)q->buffer_base +
-        ((uintptr_t)(q->requester_write_pointer + q->element_size) & q->buffer_mask));
-
-    return q->requester_write_pointer;
+    return boundary_get_next_active_element(&q->write_request_b);
 }
 
 /*
-   Called by requester
-   Advances request write pointer to next available slot
-   */
+    Called by requester
+*/
 void bdqueue_done_populating_request(bdqueue* q)
 {
+    if (!q) abort();
+
+    boundary_done_with_active_element(&q->write_request_b);
 }
 
 /*
    Called by responder
-   Advances response write pointer to next available slot.
-   Only
+   */
+void bdqueue_done_reading_request(bdqueue* q)
+{
+    if (!q) abort();
+
+    boundary_done_with_active_element(&q->read_request_b);
+}
+
+/*
+   Called by responder
    */
 void bdqueue_done_populating_response(bdqueue* q)
 {
-    if (!q) // Null queue
-    {
-        return;
-    }
+    if (!q) abort();
 
-/*
-    // Determine location of next request (accounting for wrap-around)
-    uint8_t *next = (uint8_t*)((uintptr_t)q->buffer_base +
-        ((uintptr_t)(q->responder_read_pointer + q->element_size) & q->buffer_mask));
-
-    // Check that this location is not currently being written
-    if (next == q->requester_write_pointer)
-    {
-        return NULL;
-
-        // Block here
-    }
-
-    // TODO - is mutex protection (besides signals) required?
-
-    q->responder_read_pointer = next;
-    */
+    boundary_done_with_active_element(&q->write_response_b);
 }
 
 /*
    Called by requester
-   Frees item by reducing number of total requests by one
    */
 void bdqueue_done_reading_response(bdqueue* q)
 {
-    // Just clearing space for another request
-    q->request_count--;
-    // Requester read pointer advancement only happens in bdqueue_next_response
+    if (!q) abort();
+
+    boundary_done_with_active_element(&q->read_response_b);
 }
 
 // Blocking functions
@@ -217,35 +393,11 @@ void bdqueue_done_reading_response(bdqueue* q)
    Called by responder
    Provides pointer to next available request for responder to read
    */
-uint8_t* bdqueue_next_request(bdqueue* q, bool blocking)
+uint8_t* bdqueue_next_request(bdqueue* q)
 {
-    if (!q) // Null queue
-    {
-        return NULL;
-    }
+    if (!q) abort();
 
-    // Determine location of next request (accounting for wrap-around)
-    uint8_t *next = (uint8_t*)((uintptr_t)q->buffer_base +
-        ((uintptr_t)(q->responder_read_pointer + q->element_size) & q->buffer_mask));
-
-    // Check that this location is not currently being written
-    if (next == q->requester_write_pointer)
-    {
-        // Just return null if not blocking
-        if (!blocking)
-        {
-            return NULL;
-        }
-
-        // Block here
-    }
-
-    // TODO - is mutex protection (besides signals) required?
-
-    q->responder_read_pointer = next;
-
-    return q->responder_read_pointer;
-    return q->buffer_base;
+    return boundary_get_next_active_element(&q->read_request_b);
 }
 
 /*
@@ -254,32 +406,9 @@ uint8_t* bdqueue_next_request(bdqueue* q, bool blocking)
    */
 uint8_t* bdqueue_next_response(bdqueue* q, bool blocking)
 {
-    if (!q) // Null queue
-    {
-        return NULL;
-    }
+    if (!q) abort();
 
-    // Determine location of next response (accounting for wrap-around)
-    uint8_t *next = (uint8_t*)((uintptr_t)q->buffer_base +
-        ((uintptr_t)(q->requester_read_pointer + q->element_size) & q->buffer_mask));
-
-    // Check that this location is not currently being written
-    if (next == q->responder_write_pointer)
-    {
-        // Just return null if not blocking
-        if (!blocking)
-        {
-            return NULL;
-        }
-
-        // Block here
-    }
-
-    // TODO - is mutex protection (besides signals) required?
-
-    q->responder_write_pointer = next;
-
-    return q->responder_write_pointer;
+    return boundary_get_next_active_element(&q->read_response_b);
 }
 
 int main()
@@ -299,7 +428,7 @@ int main()
         printf("failed init\n");
     }
 
-    printf("head %p\n", myq->buffer_base);
+    printf("head %p\n", myq->attr.buffer_base);
     for (int i = 0; i < 10; i++)
     {
         printf("%d %p\n", i, bdqueue_next_empty_request(myq));
