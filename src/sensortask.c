@@ -42,6 +42,21 @@ float get_light()
 
 } 
 
+void sensors_test_print(void)
+{
+    printf("Light %lf lux ",get_light());
+    printf("Temperature:%lf degC, ",get_temp(0) );
+    #ifdef SENSORDEBUG
+    printf("Data0:0x%x ,",read_reg_light_word(DATA0));
+    printf("Data1:0x%x ,",read_reg_light_word(DATA1));
+    
+    printf("Config reg:0x%x, ",(read_reg_temp(CONFIG)));               
+    printf("TLOW:%x, THIGH:%x\n",(read_reg_temp(TLOW)),read_reg_temp(THIGH));
+    
+    printf("\n"); 
+    #endif
+}
+
 /**
  * @brief Initializes the light sensor
  * this will also do the startup test to see if I2C comms
