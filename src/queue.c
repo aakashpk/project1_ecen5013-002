@@ -147,7 +147,7 @@ void boundary_done_with_active_element(queue_boundary *b)
 
         // Signal previous boundary
         pthread_mutex_lock(b->previous_boundary->blocking_m);
-        pthread_cond_signal(b->previous_boundary->blocking_cv);
+        //pthread_cond_signal(b->previous_boundary->blocking_cv);
         pthread_mutex_unlock(b->previous_boundary->blocking_m);
     }
 }
@@ -188,7 +188,14 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b)
 
             // Block on next boundary
             pthread_mutex_lock(b->blocking_m);
-            pthread_cond_wait(b->blocking_cv, b->blocking_m);
+            // not blocking here in single thread test,
+            // even when signaling disabled.
+            // pthread_cond_wait returns 0 (no error)
+            int rtval;
+            if ((rtval = pthread_cond_wait(b->blocking_cv, b->blocking_m)))
+            {
+                perror("cv woke up");
+            }
             pthread_mutex_unlock(b->blocking_m);
 
             // Do another error check just for debugging purposes
