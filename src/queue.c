@@ -235,25 +235,11 @@ typedef struct
 {
     common_queue_attributes attr;
     queue_boundary write_request_b;
-    queue_boundary read_request_b;
-    queue_boundary write_response_b;
+    queue_boundary read_request_write_response_b;
     queue_boundary read_response_b;
 } bdqueue;
 
 
-/*
-    Requester Writing
-    Responder Not Yet Wrote
-    Responder Wrote
-    responder
-
-
-
-    Requester Readed
-    Requester Reading
-
-
-*/
 typedef enum
 {
     QUEUE_SUCCESS,
@@ -297,28 +283,22 @@ queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements
     /*
         In order of buffer addresses (ignoring wrap around)
         low > high
-        read_response > write_response > read_request > write_request
+        read_response > read_request_write_response > write_request
         prev > next
         Actual initial boundary progression happens in reverse order,
         but we keep the above prev/next naming scheme.
     */
     init_boundary( // TAIL boundary (determined by HEAD init below)
         &q->read_response_b,
-        &q->write_response_b,
+        &q->read_request_write_response_b,
         &q->attr,
         true); // Requester read_response blocked by Responder write_response
 
     init_boundary(
-        &q->write_response_b,
-        &q->read_request_b,
-        &q->attr,
-        false); // Responder write_response NOT blocked by Responder read_request
-
-    init_boundary(
-        &q->read_request_b,
+        &q->read_request_write_response_b,
         &q->write_request_b,
         &q->attr,
-        true); // Responder read_request blocked by Requester write_request
+        true); // Responder read_request_write_response blocked by Requester write_request
 
     init_boundary(
         &q->write_request_b,
@@ -346,8 +326,7 @@ queue_status bdqueue_destroy(bdqueue* q)
     q->attr.element_count = 0;
 
     destroy_boundary(&q->read_response_b);
-    destroy_boundary(&q->write_response_b);
-    destroy_boundary(&q->read_request_b);
+    destroy_boundary(&q->read_request_write_response_b);
     destroy_boundary(&q->write_request_b);
 
     return QUEUE_SUCCESS;
@@ -368,7 +347,7 @@ uint8_t* bdqueue_next_empty_request(bdqueue* q)
 /*
     Called by requester
 */
-void bdqueue_done_populating_request(bdqueue* q)
+void bdqueue_done_writing_request(bdqueue* q)
 {
     if (!q) abort();
 
@@ -378,21 +357,11 @@ void bdqueue_done_populating_request(bdqueue* q)
 /*
    Called by responder
    */
-void bdqueue_done_reading_request(bdqueue* q)
+void bdqueue_done_reading_request_and_writing_response(bdqueue* q)
 {
     if (!q) abort();
 
-    boundary_done_with_active_element(&q->read_request_b);
-}
-
-/*
-   Called by responder
-   */
-void bdqueue_done_populating_response(bdqueue* q)
-{
-    if (!q) abort();
-
-    boundary_done_with_active_element(&q->write_response_b);
+    boundary_done_with_active_element(&q->read_request_write_response_b);
 }
 
 /*
@@ -405,7 +374,7 @@ void bdqueue_done_reading_response(bdqueue* q)
     boundary_done_with_active_element(&q->read_response_b);
 }
 
-// Blocking functions
+// Potentially blocking functions
 
 /*
    Called by responder
@@ -415,7 +384,7 @@ uint8_t* bdqueue_next_request(bdqueue* q)
 {
     if (!q) abort();
 
-    return boundary_get_next_active_element(&q->read_request_b);
+    return boundary_get_next_active_element(&q->read_request_write_response_b);
 }
 
 /*
@@ -428,6 +397,35 @@ uint8_t* bdqueue_next_response(bdqueue* q)
 
     return boundary_get_next_active_element(&q->read_response_b);
 }
+
+typedef enum
+{
+    HEARTBEAT,
+    TEMPERATURE,
+} example_msg_types;
+
+char* example_msg_type_strings[] = {
+    "Heartbeat",
+    "Temperature",
+};
+
+typedef struct
+{
+    example_msg_types type;
+    uint8_t send_idx;
+    uint8_t response_idx;
+    union
+    {
+        struct
+        {
+            uint8_t foo;
+        } heartbeat;
+        struct
+        {
+            uint8_t temp_value;
+        } temperature;
+    };
+} example_msg;
 
 int main()
 {
@@ -469,28 +467,83 @@ int main()
     bdqueue_destroy(myq);
 
 
-    if (bdqueue_init(myq, 3, 5) == QUEUE_FAILURE)
+    if (bdqueue_init(myq, sizeof(example_msg), 5) == QUEUE_FAILURE)
     {
         printf("failed init\n");
     }
-
     printf("head %p\n", myq->attr.buffer_base);
-    for (int i = 0; i < 10; i++)
+    // Can have up to num_elements - 1 active requests before breaking.
+    // Should be able to reach num_elements, but supporting this off-by-one limitation
+    // would introduce more complexity and is not worth the effort.
+    for (int i = 0; i < 6; i++)
     {
+        uint8_t *data = bdqueue_next_empty_request(myq);
+        printf("empty \t\tpad %d %p\n", i, data);
+
+        example_msg *msg = (example_msg*)data;
+        msg->send_idx = i;
+        if (i % 2)
+        {
+            msg->type = HEARTBEAT;
+        }
+        else
+        {
+            msg->type = TEMPERATURE;
+        }
+
+        bdqueue_done_writing_request(myq);
+    }
+
+    for (int i = 100; i < 110; i++)
+    {
+        uint8_t *data;
+        example_msg *msg;
+
         // Requester / Main Task
-        printf("empty \t\t%d %p\n", i, bdqueue_next_empty_request(myq));
-        bdqueue_done_populating_request(myq);
+
+        data = bdqueue_next_empty_request(myq);
+        printf("\nempty \t\t%d %p\n", i, data);
+
+        msg = (example_msg*)data;
+        msg->send_idx = i;
+        if (i % 2)
+        {
+            msg->type = HEARTBEAT;
+        }
+        else
+        {
+            msg->type = TEMPERATURE;
+        }
+        bdqueue_done_writing_request(myq);
+
 
         // Responder / Sensor Task
-        printf("request \t%d %p\n", i, bdqueue_next_request(myq));
-        bdqueue_done_reading_request(myq);
-        bdqueue_done_populating_response(myq);
-        // Could probably simplify and eliminate above done_reading_request
+
+        data = bdqueue_next_request(myq);
+        printf("request \t%d %p\n", i, data);
+
+        msg = (example_msg*)data;
+        msg->response_idx = i;
+        switch (msg->type)
+        {
+            case HEARTBEAT:
+                msg->heartbeat.foo = i * 10;
+                break;
+            case TEMPERATURE:
+                msg->temperature.temp_value = i * 10 + i;
+                break;
+        }
+        bdqueue_done_reading_request_and_writing_response(myq);
 
         // Requester / Main Task
-        printf("response \t%d %p\n", i, bdqueue_next_response(myq));
+        msg = (example_msg*)bdqueue_next_response(myq);
+        printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void*)msg,
+            example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
+
         bdqueue_done_reading_response(myq);
     }
+
+    bdqueue_destroy(myq);
 
     return 0;
 }
