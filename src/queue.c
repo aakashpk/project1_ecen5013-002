@@ -36,7 +36,7 @@ typedef struct
     uint8_t* buffer_base;
     size_t element_size;
     //size_t total_elements; // probably unnecessary
-    //size_t request_count; // probably unnecessary
+    size_t element_count; // needed to handle adding first element
     uintptr_t buffer_mask; // = size-1;
     //uintptr_t buffer_inv_mask; // = ~buffer_mask;
 
@@ -62,31 +62,38 @@ void init_boundary(queue_boundary *b,
     b->attr = attr;
     b->active_element = NULL;
     b->next_element = attr->buffer_base;
-    b->next_boundary = next_b;
-    // Configures next's previous pointer
-    b->next_boundary->previous_boundary = b;
+    // May initialize these below
+    b->blocking_cv = NULL;
+    b->blocking_m = NULL;
 
-    if (blocked_by_next)
+    if (next_b) // Head does not have a next entry
     {
-        b->blocking_cv = malloc(sizeof(pthread_cond_t));
-        b->blocking_m = malloc(sizeof(pthread_mutex_t));
-        if (!b->blocking_cv || !b->blocking_m)
+        b->next_boundary = next_b;
+        // Configures next's previous pointer
+        b->next_boundary->previous_boundary = b;
+
+        if (blocked_by_next)
         {
-            printf("error with malloc cv or mutex");
-            abort();
-        }
-        // Todo - may want to double-check that there are no special attributes to pass
-        if (pthread_cond_init(b->blocking_cv, NULL) ||
-            pthread_mutex_init(b->blocking_m, NULL))
-        {
-            perror("issue with cv or mutex init");
-            abort();
+            b->blocking_cv = malloc(sizeof(pthread_cond_t));
+            b->blocking_m = malloc(sizeof(pthread_mutex_t));
+            if (!b->blocking_cv || !b->blocking_m)
+            {
+                printf("error with malloc cv or mutex");
+                abort();
+            }
+            // Todo - may want to double-check that there are no special attributes to pass
+            if (pthread_cond_init(b->blocking_cv, NULL) ||
+                pthread_mutex_init(b->blocking_m, NULL))
+            {
+                perror("issue with cv or mutex init");
+                abort();
+            }
         }
     }
-    else
+    else if (blocked_by_next)
     {
-        b->blocking_cv = NULL;
-        b->blocking_m = NULL;
+        printf("Cannot be blocked by next if next is null\n");
+        abort();
     }
 }
 
@@ -114,14 +121,65 @@ void destroy_boundary(queue_boundary *b)
     b->previous_boundary = NULL;
 }
 
+void boundary_done_with_active_element(queue_boundary *b)
+{
+    if (!b) abort();
+    if (!b->active_element)
+    {
+        printf("element already inactive\n");
+        abort(); // Not a critical error
+        return;
+    }
+
+    // Disable active element
+    b->active_element = NULL;
+
+    // Special handling for TAIL boundary
+    if (!b->previous_boundary)
+    {
+        b->attr->element_count--;
+        // HEAD is never blocked by TAIL
+    }
+    // Regular non-TAIL boundary
+    else if (b->previous_boundary->blocking_cv)
+    { // Signal potentially waiting thread
+        if (!b->previous_boundary->blocking_m) abort();
+
+        // Signal previous boundary
+        pthread_mutex_lock(b->previous_boundary->blocking_m);
+        pthread_cond_signal(b->previous_boundary->blocking_cv);
+        pthread_mutex_unlock(b->previous_boundary->blocking_m);
+    }
+}
+
+uint8_t *calculate_next_element(uint8_t *current, common_queue_attributes* attr)
+{
+    if (!current || !attr) abort();
+
+    // Calculate next element location (accounting for wrap-around)
+    return (uint8_t *)((uintptr_t)attr->buffer_base +
+                       ((uintptr_t)(current + attr->element_size) & attr->buffer_mask));
+}
 
 uint8_t *boundary_get_next_active_element(queue_boundary *b)
 {
     if (!b) abort();
     if (!b->next_element) abort();
 
-    if ((b->next_element == b->next_boundary->active_element) ||
-        (b->next_element == b->next_boundary->next_element))
+    if (!b->next_boundary) // This is the special HEAD boundary
+    {
+        // Requires count-based handling
+        // Could spare these identical multiplications by adding another attr member
+        if (b->attr->element_count * b->attr->element_size > b->attr->buffer_mask)
+        {
+            // Always non-blocking
+            return NULL;
+        }
+        b->attr->element_count++;
+    }
+    // Regular non-HEAD boundary, check for conflict using next boundary
+    else if ((b->next_element == b->next_boundary->active_element) ||
+             (b->next_element == b->next_boundary->next_element))
     {
         // Boundary conflict
         if (b->blocking_cv)
@@ -150,20 +208,8 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b)
     // Not allowing multiple active elements.
     // Forces previous active element to advance if not NULL.
     // So signal previous boundary if active element is not NULL.
-
-    // Could also just call this function here more overhead in exchange for less code duplication
-    //if (b->active_element) boundary_done_with_active_element(b);
-
-    if (b->active_element &&
-        b->previous_boundary->blocking_cv)
-    {
-        if (!b->previous_boundary->blocking_m) abort();
-
-        // Signal previous boundary
-        pthread_mutex_lock(b->previous_boundary->blocking_m);
-        pthread_cond_signal(b->previous_boundary->blocking_cv);
-        pthread_mutex_unlock(b->previous_boundary->blocking_m);
-    }
+    if (b->active_element) boundary_done_with_active_element(b);
+    // Some redundancies in above function, but worth it to avoid code dulpication
 
     // No need for data protection mutex if active element set before advancing next.
     // Previous boundary will be effectively blocked
@@ -172,36 +218,11 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b)
     b->active_element = b->next_element;
 
     // Set next element location (accounting for wrap-around)
-    b->next_element = (uint8_t*)((uintptr_t)b->attr->buffer_base +
-        ((uintptr_t)(b->next_element + b->attr->element_size) & b->attr->buffer_mask));
+    b->next_element = calculate_next_element(b->next_element, b->attr);
 
     return b->active_element;
 }
 
-void boundary_done_with_active_element(queue_boundary *b)
-{
-    if (!b) abort();
-    if (!b->active_element)
-    {
-        printf("element already inactive\n");
-        abort(); // Not a critical error
-        return;
-    }
-
-    // Disable active element
-    b->active_element = NULL;
-
-    // Signal potentially waiting thread
-    if (b->previous_boundary->blocking_cv)
-    {
-        if (!b->previous_boundary->blocking_m) abort();
-
-        // Signal previous boundary
-        pthread_mutex_lock(b->previous_boundary->blocking_m);
-        pthread_cond_signal(b->previous_boundary->blocking_cv);
-        pthread_mutex_unlock(b->previous_boundary->blocking_m);
-    }
-}
     /**
  * @brief Single bidirectional circular buffer for each requester/responder
  * pair to support 2-way request/response communication (bdqueue). Requires
@@ -280,7 +301,7 @@ queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements
         Actual initial boundary progression happens in reverse order,
         but we keep the above prev/next naming scheme.
     */
-    init_boundary(
+    init_boundary( // TAIL boundary (determined by HEAD init below)
         &q->read_response_b,
         &q->write_response_b,
         &q->attr,
@@ -300,14 +321,9 @@ queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements
 
     init_boundary(
         &q->write_request_b,
-        &q->read_response_b,
+        NULL, // HEAD boundary
         &q->attr,
         false); // Requester write_request NOT blocked by Requester read_response
-
-    // TODO - this starting logic is not quite right yet
-    // Need to start write request on separate index
-    // Assuming size is at least 2 elements
-    q->write_request_b.next_element = (uint8_t*)((uintptr_t)q->attr.buffer_base + (uintptr_t)(q->attr.element_size));
 
     return QUEUE_SUCCESS;
 }
