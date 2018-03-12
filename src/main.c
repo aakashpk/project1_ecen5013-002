@@ -13,7 +13,7 @@
 
 int main(int argc, char **argv)
 {
-    static char logfilename[]="project1log.txt";
+    static char logfilename[]="project1log.log";
     extern char *optarg;
 	extern int optind;
     int optret;
@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     if(argc < 3 || optret!='f')
     {
         printf("Usage is project1 -f logfilename\n \
-        File option not proper, using project1log.txt\n");
+        File option not proper, using project1log.log\n");
     }
     else
         strcpy(logfilename,optarg);
