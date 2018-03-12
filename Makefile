@@ -1,3 +1,4 @@
+
 .PHONY: all clean unittest
 
 include sources.mk
@@ -32,7 +33,9 @@ HOST_OBJECTS=$(HOST_SOURCES:.c=.o)
 
 TEST_TARGETS=$(TEST_SOURCES:.c=.test)
 
-
+# Change compiler and files if cross compiling for BBB/BBG\
+also removes the I2C sensor files\
+when compiling for HOST
 ifeq ($(PLATFORM),BBB)
 CC=arm-linux-gnueabihf-gcc
 OBJECTS= $(COMMON_OBJECTS) $(BBB_OBJECTS) $(MAIN_OBJECT)
@@ -41,13 +44,7 @@ else
 OBJECTS=$(COMMON_OBJECTS) $(HOST_OBJECTS) $(MAIN_OBJECT)
 endif
 
-#rule to run unit tests
-unittest:$(TEST_TARGETS)
-
-%.test:%.c $(BBB_OBJECTS) $(COMMON_OBJECTS)
-	$(CC) $< $(COMMON_OBJECTS) $(BBB_OBJECTS) -o $@ $(CFLAGS) $(INCLUDE) $(TESTFLAGS) $(WRAPPED_FUNCTIONS)
-	./$@
-
+#default build , changes based on platform
 all:$(OBJECTS)
 ifeq ($(PLATFORM),BBB)
 	$(CC) $(OBJECTS) -o $(TARGET) $(CFLAGS) $(INCLUDE)
@@ -59,6 +56,16 @@ endif
 
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE)
+
+#rule to run unit tests
+unittest:$(TEST_TARGETS)
+
+# generates executable for each unit test file\
+and runs them
+%.test:%.c $(BBB_OBJECTS) $(COMMON_OBJECTS)
+	$(CC) $< $(COMMON_OBJECTS) $(BBB_OBJECTS) -o $@ $(CFLAGS) $(INCLUDE) \
+	$(TESTFLAGS) $(WRAPPED_FUNCTIONS)
+	./$@
 
 clean:
 	rm -f src/*.o test/*.o 
