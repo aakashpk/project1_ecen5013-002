@@ -292,6 +292,7 @@ queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements
 
     q->attr.element_size = element_size;
     q->attr.buffer_mask = (uintptr_t)(total_size - 1);
+    q->attr.element_count = 0;
 
     /*
         In order of buffer addresses (ignoring wrap around)
@@ -342,6 +343,7 @@ queue_status bdqueue_destroy(bdqueue* q)
 
     q->attr.buffer_mask = 0;
     q->attr.element_size = 0;
+    q->attr.element_count = 0;
 
     destroy_boundary(&q->read_response_b);
     destroy_boundary(&q->write_response_b);
@@ -420,7 +422,7 @@ uint8_t* bdqueue_next_request(bdqueue* q)
    Called by requester
    Provides pointer to next available response for requester to read
    */
-uint8_t* bdqueue_next_response(bdqueue* q, bool blocking)
+uint8_t* bdqueue_next_response(bdqueue* q)
 {
     if (!q) abort();
 
@@ -448,6 +450,46 @@ int main()
     for (int i = 0; i < 10; i++)
     {
         printf("%d %p\n", i, bdqueue_next_empty_request(myq));
+    }
+
+    bdqueue_destroy(myq);
+
+    // Testing above identical code again to see if destory worked
+    if (bdqueue_init(myq, 3, 5) == QUEUE_FAILURE)
+    {
+        printf("failed init\n");
+    }
+
+    printf("head %p\n", myq->attr.buffer_base);
+    for (int i = 0; i < 10; i++)
+    {
+        printf("%d %p\n", i, bdqueue_next_empty_request(myq));
+    }
+
+    bdqueue_destroy(myq);
+
+
+    if (bdqueue_init(myq, 3, 5) == QUEUE_FAILURE)
+    {
+        printf("failed init\n");
+    }
+
+    printf("head %p\n", myq->attr.buffer_base);
+    for (int i = 0; i < 10; i++)
+    {
+        // Requester / Main Task
+        printf("empty \t\t%d %p\n", i, bdqueue_next_empty_request(myq));
+        bdqueue_done_populating_request(myq);
+
+        // Responder / Sensor Task
+        printf("request \t%d %p\n", i, bdqueue_next_request(myq));
+        bdqueue_done_reading_request(myq);
+        bdqueue_done_populating_response(myq);
+        // Could probably simplify and eliminate above done_reading_request
+
+        // Requester / Main Task
+        printf("response \t%d %p\n", i, bdqueue_next_response(myq));
+        bdqueue_done_reading_response(myq);
     }
 
     return 0;
