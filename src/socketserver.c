@@ -14,7 +14,7 @@ create a socket  and starts a listner and listen for client requests
 Cleanup and free resources once done -- unlink,close
 accept requests from client
 send responses to client
-thread function that wraps up all these and can 
+thread function that wraps up all these and can stay alive till main closes it
 
 */
 
@@ -37,6 +37,8 @@ int create_socket_server(void)
     /* Indicate that this is a server. */
     name.sun_family = AF_LOCAL;
     strcpy (name.sun_path, SOCKET_NAME);
+
+    unlink(SOCKET_NAME);
 
     if(bind (socket_fd,(struct sockaddr*) &name, sizeof(struct sockaddr_un))<0)
     {
@@ -81,31 +83,21 @@ void delete_socket(int socket_fd)
 
 }
 
+int socket_thread(void * thread_param)
+{
+    int socket_fd, client_fd;
+    char message[20];
+    socket_fd=create_socket_server();
+    client_fd=accept_connection(socket_fd);
 
-/*
-int main()
-{               
+    // This has to be replaced with request response code
+    recv(client_fd,message,sizeof(message),0);
 
+    printf("Received: %s\n",message);
 
-    
-    
-    // Receive message from client
-    
-    printf("In process [%d] Receiving message\n",getpid());
-    recv(client_socket_fd,rec_message1,sizeof(message_data_t),0);
-    rec_message1->user_string=malloc(rec_message1->length);
-    recv(client_socket_fd,rec_message1->user_string,rec_message1->length,0);
-    
+    delete_socket(socket_fd);
 
-    // Send message to client
-    
-    send_message1=createMessage("Process1 to 2",0);
-    print_message(send_message1);
-    send(client_socket_fd,send_message1,sizeof(message_data_t),0);
-    send(client_socket_fd,send_message1->user_string,send_message1->length,0);
-    
-
-  
-    
 }
-*/
+
+
+//    send(client_socket_fd,send_message1,sizeof(message_data_t),0);

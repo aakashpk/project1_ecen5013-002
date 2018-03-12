@@ -14,10 +14,13 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#include <stdio.h>
+#include <string.h>
+#include <stddef.h>
+#include <unistd.h>
 
 
 #define SOCKET_NAME "mysocket"

@@ -6,24 +6,33 @@
 #include "sensortask.h"
 #else
 #include "dummydata.h"
+#include "socketserver.h"
+#include <pthread.h>
 #endif
 
 int main()
 {
     #ifndef BBB
     // Code that will execute only on host
-
+    
+    pthread_t threadIDs[1];
     /*
     Create logger thread
     create system logging thread
     create temp sensor thread
     create light sensor thread
+    Create external request socket server
     */
 
-    //pthread_create();
+    if(pthread_create(&threadIDs[0],NULL,socket_thread,NULL)!=0)
+		printf("Thread 1 creation failed\n");
+
+    printf("Thread created with ID %ld\n",threadIDs[0]);
 
     printf("Temp is %lf, light is %lf",get_temp(),get_light());
     
+    pthread_join(threadIDs[0],NULL);
+
     return 0;
     #endif
     
