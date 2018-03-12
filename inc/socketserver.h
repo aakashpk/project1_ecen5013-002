@@ -59,7 +59,7 @@ int accept_connection(int socket_fd);
  * @param thread_param 
  * @return int 
  */
-int socket_thread(void * thread_param);
+void * socket_thread(void * thread_param);
 
 
 

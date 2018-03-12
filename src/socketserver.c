@@ -83,7 +83,7 @@ void delete_socket(int socket_fd)
 
 }
 
-int socket_thread(void * thread_param)
+void * socket_thread(void * thread_param)
 {
     int socket_fd, client_fd;
     char message[20];
@@ -96,6 +96,8 @@ int socket_thread(void * thread_param)
     printf("Received: %s\n",message);
 
     delete_socket(socket_fd);
+
+    return 0;
 
 }
 
