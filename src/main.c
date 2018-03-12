@@ -1,5 +1,6 @@
 //#define BBB
 
+#include <getopt.h>
 #ifdef BBB
 #include "tempsensor.h"
 #include "lightsensor.h"
@@ -10,9 +11,27 @@
 #include <pthread.h>
 #endif
 
-int main()
+int main(int argc, char **argv)
 {
+    static char logfilename[]="project1log.txt";
+    extern char *optarg;
+	extern int optind;
+    int optret;
+
+    optret=getopt(argc, argv, "f:");
+
+    if(argc < 3 || optret!='f')
+    {
+        printf("Usage is project1 -f logfilename\n \
+        File option not proper, using project1log.txt\n");
+    }
+    else
+        strcpy(logfilename,optarg);
+
+    printf("Log Filename is %s\n",logfilename);
+
     #ifndef BBB
+
     // Code that will execute only on host
     
     pthread_t threadIDs[1];
