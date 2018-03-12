@@ -13,6 +13,7 @@ INCLUDE=-I./inc
 
 
 CFLAGS=-std=$(CSTD)\
+	-pthread\
 	-Wall
 #	-O0\
 #	-Werror
@@ -30,6 +31,7 @@ MAIN_OBJECT=$(MAIN_SOURCE:.c=.o)
 COMMON_OBJECTS=$(COMMON_SOURCES:.c=.o)
 BBB_OBJECTS=$(BBB_SOURCES:.c=.o)
 HOST_OBJECTS=$(HOST_SOURCES:.c=.o)
+CLIENT_OBJECTS=$(CLIENT_SOURCES:.c=.o)
 
 TEST_TARGETS=$(TEST_SOURCES:.c=.test)
 
@@ -57,6 +59,9 @@ endif
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE)
 
+client:$(CLIENT_SOURCES)
+	$(CC) -o $@ $(CLIENT_SOURCES) $(INCLUDE)
+
 #rule to run unit tests
 unittest:$(TEST_TARGETS)
 
@@ -69,5 +74,5 @@ and runs them
 
 clean:
 	rm -f src/*.o test/*.o 
-	rm -f $(TEST_TARGETS) $(TARGET)
+	rm -f $(TEST_TARGETS) $(TARGET) client
 
