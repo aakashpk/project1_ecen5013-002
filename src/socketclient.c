@@ -61,13 +61,11 @@ int main()
     socket_fd=create_socket_client();
     socket_connect(socket_fd);
 
+    // Add external API request to socket server here
     printf("Sending: %s\n",message);
 
     send(socket_fd,message,sizeof(message),0);
-    // send(socket_fd,send_message2,sizeof(message_data_t),0);
-    // send(socket_fd,send_message2->user_string,send_message2->length,0);
-
-    
+   
     close (socket_fd);
     return 0;
         
