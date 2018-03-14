@@ -25,7 +25,7 @@
 #define DATA1LOW (uint8_t)0x8E
 #define DATA1HIGH (uint8_t)0x8F
 
-//Register Addresses For word reads
+//Register Addresses for word reads
 #define THRESHLOW (uint16_t)0xA2 // Low threshold 16 bit limit
 #define THRESHHIGH (uint16_t)0xA4 // High threshold 16 bit limit
 #define DATA0 (uint16_t)0xAC // Channel 0 16 bit data

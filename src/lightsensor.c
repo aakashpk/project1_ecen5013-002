@@ -72,6 +72,11 @@ uint16_t read_reg_light_word(uint8_t reg)
     }
 
     i2c_close(file);
+
+    #ifdef SENSORDEBUG
+    printf("Register %x\n",buffer);
+    #endif
+
     return buffer;
 
 }
@@ -81,12 +86,13 @@ uint16_t read_reg_light_word(uint8_t reg)
 int8_t write_reg_light_byte(uint8_t reg,uint8_t value)
 {
     uint8_t file;
+    uint16_t buffer;
 
     file=i2c_open_light();
 
-    write(file,&reg,1);
+    buffer=((uint16_t)value<<8)|((uint16_t)reg);
 
-    if(write(file,&value,1)<0)
+    if(write(file,&buffer,2)<0)
     {
         perror("Error writing to file");
         i2c_close(file);
@@ -102,12 +108,13 @@ int8_t write_reg_light_byte(uint8_t reg,uint8_t value)
 int8_t write_reg_light_word(uint8_t reg,uint16_t value)
 {
     uint8_t file;
+    uint32_t buffer;
 
     file=i2c_open_light();
 
-    write(file,&reg,1);
+    buffer=((uint32_t)value<<8)|((uint32_t)reg);
 
-    if(write(file,&value,4)<0)
+    if(write(file,&buffer,3)<0)
     {
         perror("Error writing to file");
         i2c_close(file);
