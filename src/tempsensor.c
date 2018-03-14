@@ -37,12 +37,16 @@ int16_t read_reg_temp(uint8_t reg)
 int8_t write_reg_temp(uint8_t reg,uint16_t value)
 {
     int8_t file;
+    uint32_t buffer;
+
+   // buffer=((((uint32_t)(TEMP12TOU16(value)))<<8)|((uint32_t)reg));
+   buffer=((((uint32_t)(BYTESWAP(value)))<<8)|((uint32_t)reg));
+
+    printf("Writing %x\n",buffer);
 
     file=i2c_open_temp();
 
-    write(file,&reg,1);
-
-    if(write(file,&value,3)!=1)
+    if(write(file,&buffer,3)<1)
     {
         printf("Error writing to register\n");
         i2c_close(file);
@@ -52,8 +56,6 @@ int8_t write_reg_temp(uint8_t reg,uint16_t value)
     i2c_close(file);
 
     return 0;
-
-    //TODO: Add a return for this ??
 }
 
 int8_t temp_sensor_init(void)
@@ -61,4 +63,11 @@ int8_t temp_sensor_init(void)
 
     // Should return 0 when all init works fine
     return 0;
+}
+
+
+void temp_sensor_raise_alert()
+{
+    // read temperature
+    // Change high val to less than the read value and raise alert
 }
