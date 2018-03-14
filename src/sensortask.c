@@ -12,16 +12,13 @@ float get_temp(uint8_t unit)
     // to byte 1 byte0 and shift 4 bits to remove last 4 unused bits
     temp1=U16TOTEMPOUT(temp);
 
-    #ifdef DEBUG
+    #ifdef SENSORDEBUG
     printf("temp:0x%x temp1:0x%x \n",temp,temp1);
     #endif
 
     //(((uint16_t)~d)&(uint16_t)0x0FFF)+1
 
-    if(temp1>0x7FF)
-        temperature=((temp1*0.0625)-256);
-    else 
-        temperature=temp1*0.0625;
+    temperature=TOTEMPVAL(temp1);
 
     // Convert degC to the requested unit
     //1 for degF, 2 for K, default - degC
@@ -46,6 +43,7 @@ void sensors_test_print(void)
 {
     printf("Light %lf lux ",get_light());
     printf("Temperature:%lf degC, ",get_temp(0) );
+    
     #ifdef SENSORDEBUG
     printf("Data0:0x%x ,",read_reg_light_word(DATA0));
     printf("Data1:0x%x ,",read_reg_light_word(DATA1));
@@ -53,8 +51,8 @@ void sensors_test_print(void)
     printf("Config reg:0x%x, ",(read_reg_temp(CONFIG)));               
     printf("TLOW:%x, THIGH:%x\n",(read_reg_temp(TLOW)),read_reg_temp(THIGH));
     
-    printf("\n"); 
     #endif
+    printf("\n"); 
 }
 
 /**
@@ -65,10 +63,10 @@ void sensors_test_print(void)
  * 
  * 
  */
-void temperature_task()
+void * temperature_task()
 {
 
-
+    return NULL;
 }
 
 /**
@@ -77,7 +75,9 @@ void temperature_task()
  * Sets up periodic timer to log light data 
  * 
  */
-void light_task()
+void * light_task()
 {
+
+    return NULL;
 
 }
