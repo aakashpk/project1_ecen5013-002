@@ -1,9 +1,13 @@
 #include "lightsensor.h"
 
+#define perror {}
 
 int8_t light_sensor_init()
 {
     int ret;
+
+    if(read_reg_light_byte(ID)!=0x50)
+        return -1;
 
     // Turn on sensor by writing 0x03 to the control register
     ret=write_reg_light_byte(CONTROL,TURN_ON);
@@ -25,6 +29,9 @@ int8_t i2c_open_light()
 {
     int file;
     file = i2c_open();
+
+    if(file<0) return -1;
+
     if (ioctl(file,I2C_SLAVE,LIGHT_SENSOR_ADDR) < 0) 
     {
         perror("Light sensor IOCTL failed"); // ERROR HANDLING;
@@ -40,6 +47,8 @@ uint8_t read_reg_light_byte(uint8_t reg)
     uint8_t buffer;
 
     file=i2c_open_light();
+
+    if(file<0) return -1;
     
     write(file,&reg,1); // Write to bus, which register has to be read
 
@@ -61,6 +70,8 @@ uint16_t read_reg_light_word(uint8_t reg)
     uint16_t buffer;
 
     file=i2c_open_light();
+
+    if(file<0) return -1;
     
     write(file,&reg,1); // Write to bus, which register has to be read
 
@@ -90,6 +101,8 @@ int8_t write_reg_light_byte(uint8_t reg,uint8_t value)
 
     file=i2c_open_light();
 
+    if(file<0) return -1;
+
     buffer=((uint16_t)value<<8)|((uint16_t)reg);
 
     if(write(file,&buffer,2)<0)
@@ -111,6 +124,8 @@ int8_t write_reg_light_word(uint8_t reg,uint16_t value)
     uint32_t buffer;
 
     file=i2c_open_light();
+
+    if(file<0) return -1;
 
     buffer=((uint32_t)value<<8)|((uint32_t)reg);
 

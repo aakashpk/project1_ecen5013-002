@@ -3,6 +3,8 @@
 
 #include "my_i2c.h"
 
+#define LOG_STR printf // temporary till actual logging is setup
+
 // Temp sensor address
 #define TEMP_SENSOR_ADDR (uint8_t)0x48
 
@@ -22,7 +24,8 @@
 //Convert 16bit register read to 12 bit temp with the lowest byte shifted out
 #define U16TOTEMPOUT(reg_16) (((((reg_16)>>8)&0x00F0)|(((reg_16)<<8)&0xFF00))>>4)
 
-// Use after using above macro to get temperature value in degC, takes care of -ve temperature as well
+// Converts 12 bit register value to temperature,
+//takes care of -ve temperature as well
 #define TOTEMPVAL(reg12read) ((reg12read)>0x7FF)?((reg12read*0.0625)-256):(reg12read*0.0625)
 
 // Register read returns high byte as low byte after read, swap bytes to get correct value
@@ -31,9 +34,12 @@
 
 #define TEMP12TOU16(reg_12) ((((reg_12)>>4)&0x00FF)|(((reg_12)<<12)&0xF000))
 
-
-
-
+#define TEMP_SD (uint16_t)0x0100
+#define TEMP_TM (uint16_t)0x0200
+#define TEMP_POL (uint16_t)0x0400
+#define TEMP_FAULT(x) (uint16_t)((((uint16_t)(x)<<3))&(uint16_t)(0x1800))
+#define TEMP_CONV_RATE(x) (uint16_t)((((uint16_t)(x)<<6))&(uint16_t)(0x00C0))
+#define TEMP_EM_MODE (uint16_t)0x0010
 
 
 int8_t i2c_open_temp();
@@ -46,7 +52,7 @@ int8_t i2c_open_temp();
  *
  * @return the value read from the register
  */
-int16_t read_reg_temp(uint8_t reg);
+uint16_t read_reg_temp(uint8_t reg);
 
 /**
  * @brief Initialize temperature sensor

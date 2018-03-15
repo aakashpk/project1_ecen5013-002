@@ -35,7 +35,7 @@
 //Register values for sensor operations
 #define TURN_ON (uint8_t)0x03
 #define HIGH_GAIN (uint8_t)0x10
-#define INTEGRATION_TIME 
+#define LIGHT_INT_TIME(x) (uint8_t)((((uint8_t)(x)))&(uint8_t)(0x03))
 
 // Gain values
 #define RV_FLU_LOWGAIN_CH0 2.3
@@ -44,6 +44,7 @@
 #define RV_INC_LOWGAIN_CH0 9
 #define RV_INC_LOWGAIN_CH1 4.5
 
+#define LIGHT_INTR(x) (uint8_t)((((uint8_t)(x)<<4))&(uint8_t)(0x30))
 
 int8_t light_sensor_init();
 

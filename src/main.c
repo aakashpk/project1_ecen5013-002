@@ -62,12 +62,28 @@ int main(int argc, char **argv)
     #ifdef BBB
     // Code that will execute only on BBB
 
-  
-    light_sensor_init();
-    while(1)
+    if(temp_sensor_init()==0) LOG_STR("Temp Sensor Self Test Done\n");
+    else 
+    {
+        printf("Temp Sensor Init Failed\n");
+        exit(1);
+    }
+
+    if(light_sensor_init()==0) LOG_STR("Light Sensor Self Test Done\n");
+    else 
+    {
+        printf("Light Sensor Init Failed\n");
+        exit(1);
+    }
+      
+
+    temp_sensor_raise_alert();
+
+    
+   while(1)
     {
      
-	    sensors_test_print();	
+	    //sensors_test_print();	
 
     } 
     

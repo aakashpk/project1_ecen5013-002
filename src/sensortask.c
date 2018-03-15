@@ -2,24 +2,14 @@
 
 float get_temp(uint8_t unit)
 {
-    uint16_t temp,temp1;
     float temperature;
 
-    temp=(uint16_t)read_reg_temp(TEMP_VAL); // read temperature register
-
-    // Convert read values to temp reading
-    // The 16 bit read value is in byte0 byte1 format change it
-    // to byte 1 byte0 and shift 4 bits to remove last 4 unused bits
-    temp1=U16TOTEMPOUT(temp);
-
-    #ifdef SENSORDEBUG
-    printf("temp:0x%x temp1:0x%x \n",temp,temp1);
-    #endif
-
+    // read temperature register shift to remove the lagging 0 
+    //and convert to degC value
+    temperature=TOTEMPVAL((read_reg_temp(TEMP_VAL)>>4));
+    
     //(((uint16_t)~d)&(uint16_t)0x0FFF)+1
-
-    temperature=TOTEMPVAL(temp1);
-
+    
     // Convert degC to the requested unit
     //1 for degF, 2 for K, default - degC
     if(unit==0) return temperature;

@@ -21,10 +21,9 @@
 #define I2CBUSNAME "/dev/i2c-2"
 
 
+int8_t i2c_open();
 
-uint8_t i2c_open();
 
-
-void i2c_close(uint8_t file);
+void i2c_close(int8_t file);
 
 #endif

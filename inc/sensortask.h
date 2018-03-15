@@ -12,4 +12,6 @@ void * temperature_task();
 
 void * light_task();
 
+void sensors_test_print(void);
+
 #endif // End of header file
