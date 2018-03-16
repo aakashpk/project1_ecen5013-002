@@ -4,12 +4,15 @@
 #ifdef BBB
 #include "tempsensor.h"
 #include "lightsensor.h"
-#include "sensortask.h"
 #else
 #include "dummydata.h"
 #include "socketserver.h"
 #include <pthread.h>
 #endif
+
+#define THREAD_NUMBER 3
+
+
 
 int main(int argc, char **argv)
 {
@@ -17,6 +20,9 @@ int main(int argc, char **argv)
     extern char *optarg;
 	extern int optind;
     int optret;
+
+    thread_param_t param1 ;
+    param1.keep_thread_alive=1;
 
     optret=getopt(argc, argv, "f:");
 
@@ -34,7 +40,15 @@ int main(int argc, char **argv)
 
     // Code that will execute only on host
     
-    pthread_t threadIDs[1];
+    pthread_t threadIDs[THREAD_NUMBER];
+    
+    // Array with functions for each of the tasks
+    void * thread_functions[THREAD_NUMBER] ={socket_thread,temperature_task,light_task};
+
+    // Array with parameters to be passed for each of these tasks
+    // Maintain same order between the 2 arrays
+    void * thread_parameters[THREAD_NUMBER] = {(void *)&param1,(void *)&param1,(void *)&param1};
+    
     /*
     Create logger thread
     create system logging thread
@@ -43,20 +57,24 @@ int main(int argc, char **argv)
     Create external request socket server
     */
 
-    /* TODO: Make an array of all thread functions and move the thread creating inside a loop
-     Parameters to be passed to the thread would be logger referrences,
-     those can also be put into an array */
 
-    if(pthread_create(&threadIDs[0],NULL,socket_thread,NULL)!=0)
-		printf("Thread 1 creation failed\n");
+    for(int i=0;i<THREAD_NUMBER;i++)
+    {
+        if(pthread_create(&threadIDs[i],NULL,thread_functions[i],thread_parameters[i])!=0)
+		    printf("Thread %d creation failed\n",i);
 
-    printf("Thread created with ID %ld\n",threadIDs[0]);
+        else 
+            printf("Thread created with ID %ld\n",threadIDs[0]);
+    }
 
-    printf("Temp is %lf, light is %lf\n",get_temp(),get_light());
     
-    pthread_join(threadIDs[0],NULL);
+    for(int i=0;i<THREAD_NUMBER;i++)
+    {
+        pthread_join(threadIDs[i],NULL);
+    }
 
     return 0;
+    
     #endif
     
     #ifdef BBB

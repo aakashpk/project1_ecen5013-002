@@ -13,7 +13,7 @@ INCLUDE=-I./inc
 
 
 CFLAGS=-std=$(CSTD)\
-	-pthread\
+	-lpthread\
 	-Wall
 #	-O0\
 #	-Werror

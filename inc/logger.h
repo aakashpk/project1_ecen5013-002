@@ -6,7 +6,7 @@
 
 #define DISP_TIME(t) ((t).tv_sec,(t).tv_nsec)
 
-enum payload_type
+typedef enum payload_type
 {
     TEMPERATURE,
     LIGHT,
