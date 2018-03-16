@@ -61,16 +61,16 @@ void sequeue_done_reading(sequeue *q)
 }
 
 /* Blocking */
-uint8_t *sequeue_next_empty(sequeue *q)
+uint8_t *sequeue_next_empty(sequeue *q, bool force_noblock)
 {
     if (!q) abort();
 
-    return boundary_get_next_active_element(&q->write_b);
+    return boundary_get_next_active_element(&q->write_b, force_noblock);
 }
 
-uint8_t *sequeue_read_next(sequeue *q)
+uint8_t *sequeue_read_next(sequeue *q, bool force_noblock)
 {
     if (!q) abort();
 
-    return boundary_get_next_active_element(&q->read_b);
+    return boundary_get_next_active_element(&q->read_b, force_noblock);
 }

@@ -50,5 +50,5 @@ void destroy_boundary(queue_boundary *b);
 
 uint8_t *calculate_next_element(uint8_t *current, common_queue_attributes* attr);
 
-uint8_t *boundary_get_next_active_element(queue_boundary *b);
+uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock);
 void boundary_done_with_active_element(queue_boundary *b);

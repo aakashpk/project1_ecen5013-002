@@ -83,7 +83,7 @@ uint8_t *bdqueue_next_empty_request(bdqueue *q)
 {
     if (!q) abort();
 
-    return boundary_get_next_active_element(&q->write_request_b);
+    return boundary_get_next_active_element(&q->write_request_b, false);
 }
 
 
@@ -123,20 +123,20 @@ void bdqueue_done_reading_response(bdqueue* q)
    Called by responder
    Provides pointer to next available request for responder to read
    */
-uint8_t* bdqueue_next_request(bdqueue* q)
+uint8_t* bdqueue_next_request(bdqueue* q, bool force_noblock)
 {
     if (!q) abort();
 
-    return boundary_get_next_active_element(&q->read_request_write_response_b);
+    return boundary_get_next_active_element(&q->read_request_write_response_b, force_noblock);
 }
 
 /*
    Called by requester
    Provides pointer to next available response for requester to read
    */
-uint8_t* bdqueue_next_response(bdqueue* q)
+uint8_t* bdqueue_next_response(bdqueue* q, bool force_noblock)
 {
     if (!q) abort();
 
-    return boundary_get_next_active_element(&q->read_response_b);
+    return boundary_get_next_active_element(&q->read_response_b, force_noblock);
 }

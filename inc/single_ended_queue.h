@@ -20,6 +20,6 @@ void sequeue_done_writing(sequeue *q);
 void sequeue_done_reading(sequeue *q);
 
 /* Blocking */
-uint8_t *sequeue_next_empty(sequeue *q);
+uint8_t *sequeue_next_empty(sequeue *q, bool force_noblock);
 
-uint8_t *sequeue_read_next(sequeue *q);
+uint8_t *sequeue_read_next(sequeue *q, bool force_noblock);

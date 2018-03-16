@@ -133,7 +133,7 @@ int main()
 
         // Responder / Sensor Task
 
-        data = bdqueue_next_request(myq);
+        data = bdqueue_next_request(myq, false);
         printf("request \t%d %p\n", i, data);
 
         msg = (example_msg*)data;
@@ -150,7 +150,7 @@ int main()
         bdqueue_done_reading_request_and_writing_response(myq);
 
         // Requester / Main Task
-        msg = (example_msg*)bdqueue_next_response(myq);
+        msg = (example_msg*)bdqueue_next_response(myq, false);
         printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void*)msg,
             example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
 
@@ -172,9 +172,9 @@ int main()
     }
 
     printf("head %p\n", myseq->attr.buffer_base);
-    for (int i = 0; i < 8; i++) // Out of bounds gennerates abort if blocking enabled without -lpthread
+    for (int i = 0; i < 10; i++)
     {
-        printf("%d %p\n", i, sequeue_next_empty(myseq));
+        printf("%d %p\n", i, sequeue_next_empty(myseq, true));
     }
 
     sequeue_destroy(myseq);
@@ -186,9 +186,9 @@ int main()
     }
 
     printf("head %p\n", myseq->attr.buffer_base);
-    for (int i = 0; i < 8; i++) // Out of bounds gennerates abort if blocking enabled without -lpthread
+    for (int i = 0; i < 10; i++)
     {
-        printf("%d %p\n", i, sequeue_next_empty(myseq));
+        printf("%d %p\n", i, sequeue_next_empty(myseq, true));
     }
 
     sequeue_destroy(myseq);
@@ -204,7 +204,7 @@ int main()
     // would introduce more complexity and is not worth the effort.
     for (int i = 0; i < 6; i++)
     {
-        uint8_t *data = sequeue_next_empty(myseq);
+        uint8_t *data = sequeue_next_empty(myseq, true);
         printf("empty \t\tpad %d %p\n", i, data);
 
         example_msg *msg = (example_msg*)data;
@@ -228,7 +228,7 @@ int main()
 
         // Writer task
 
-        data = sequeue_next_empty(myseq);
+        data = sequeue_next_empty(myseq, true);
         printf("\nempty \t\t%d %p\n", i, data);
 
         msg = (example_msg*)data;
@@ -248,7 +248,7 @@ int main()
 
         // Reader task
 
-        msg = (example_msg*)sequeue_read_next(myseq);
+        msg = (example_msg*)sequeue_read_next(myseq, true);
         printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void*)msg,
             example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
 

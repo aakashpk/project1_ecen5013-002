@@ -73,10 +73,10 @@ void bdqueue_done_reading_response(bdqueue* q);
    Called by responder
    Provides pointer to next available request for responder to read
    */
-uint8_t* bdqueue_next_request(bdqueue* q);
+uint8_t* bdqueue_next_request(bdqueue* q, bool force_noblock);
 
 /*
    Called by requester
    Provides pointer to next available response for requester to read
    */
-uint8_t* bdqueue_next_response(bdqueue* q);
+uint8_t* bdqueue_next_response(bdqueue* q, bool force_noblock);

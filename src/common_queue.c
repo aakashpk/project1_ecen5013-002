@@ -138,7 +138,7 @@ uint8_t *calculate_next_element(uint8_t *current, common_queue_attributes* attr)
                        ((uintptr_t)(current + attr->element_size) & attr->buffer_mask));
 }
 
-uint8_t *boundary_get_next_active_element(queue_boundary *b)
+uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
 {
     if (!b) abort();
     if (!b->next_element) abort();
@@ -161,7 +161,7 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b)
           (b->next_element == b->next_boundary->next_element))))
     {
         // Check if blocking required
-        if (b->blocking_cv)
+        if (b->blocking_cv && !force_noblock)
         {
             if (!b->blocking_m) abort();
 
