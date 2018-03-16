@@ -6,7 +6,7 @@ Project 1 for Advanced Principles of Embedded Software ECEN5013-002, Spring 2018
 * `make PLATFORM=BBB` for building for BBG/BBB and transferring the executable to /home/proj1 on the BBB/BBG
 * `make client` to build the external socket request client
 * Run `make clean` before changing platforms
-* `make unittest` to run unittests
+* `make test` to run unittests
 * Run `./project1 -f logfilename` to provide a Log file name, if parameters are not proper filename defaults to project1logfile.log
 
 

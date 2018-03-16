@@ -1,5 +1,5 @@
 
-.PHONY: all clean unittest
+.PHONY: all clean test
 
 include sources.mk
 
@@ -63,16 +63,16 @@ client:$(CLIENT_SOURCES)
 	$(CC) -o $@ $(CLIENT_SOURCES) $(INCLUDE)
 
 #rule to run unit tests
-unittest:$(TEST_TARGETS)
+test:$(TEST_TARGETS)
+	./$^
 
 # generates executable for each unit test file\
 and runs them
 %.test:%.c $(BBB_OBJECTS) $(COMMON_OBJECTS)
 	$(CC) $< $(COMMON_OBJECTS) $(BBB_OBJECTS) -o $@ $(CFLAGS) $(INCLUDE) \
 	$(TESTFLAGS) $(WRAPPED_FUNCTIONS)
-	./$@
 
 clean:
-	rm -f src/*.o test/*.o 
+	rm -f src/*.o test/*.o
 	rm -f $(TEST_TARGETS) $(TARGET) client
 
