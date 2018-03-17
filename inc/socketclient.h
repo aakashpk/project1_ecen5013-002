@@ -9,18 +9,7 @@
 #ifndef SOCKETCLIENT_H
 #define SOCKETCLIENT_H
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-
-#define SOCKET_NAME "mysocket"
+#include "socket_data_type.h"
 
 /*
 Functions for
