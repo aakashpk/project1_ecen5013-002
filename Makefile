@@ -56,7 +56,7 @@ run: build
 ifeq ($(PLATFORM),BBB)
 	scp $(TARGET) root@192.168.7.2:/home/proj1/$(TARGET)
 else
-	./$(TARGET) -f proj1logfile.log
+	./$(TARGET) -f logfile.txt
 endif
 
 all: run

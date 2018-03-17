@@ -20,7 +20,7 @@
 int main(int argc, char **argv)
 {
 
-    static char logfilename[] = "project1log.log";
+    static char logfilename[] = "default_log.txt";
     extern char *optarg;
     extern int optind;
     int optret;
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     if (argc < 3 || optret != 'f')
     {
         printf("Usage is project1 -f logfilename\n \
-        File option not proper, using project1log.log\n");
+        File option not proper, using %s\n", logfilename);
     }
     else
         strcpy(logfilename, optarg);
@@ -61,10 +61,6 @@ int main(int argc, char **argv)
 
     // Array with functions for each of the tasks
     void *thread_functions[THREAD_NUMBER] = {socket_thread, temperature_task, light_task};
-
-    // Array with parameters to be passed for each of these tasks
-    // Maintain same order between the 2 arrays
-    void *thread_parameters[THREAD_NUMBER] = {(void *)&param1, (void *)&param1, (void *)&param1};
 
     // TODO:
     //Create logger thread
@@ -121,7 +117,7 @@ int main(int argc, char **argv)
         {
             for (int i = 0; i < sizeof(all_queues) / sizeof(all_queues[0]); i++)
             {
-                while(msg = (logged_data_t*)bdqueue_next_response(all_queues[i], true))
+                while ((msg = (logged_data_t *)bdqueue_next_response(all_queues[i], true)))
                 {
                     log_printf("Main Response: req %ld, rsp %ld, source %s, msg type %s, value %f\n",
                         msg->req_time, msg->res_time, queue_names[i], data_header_type_strings[msg->type],

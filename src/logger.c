@@ -22,8 +22,9 @@ void *log_flush_task(void *arg)
                 while ((msg = (char *)sequeue_read_next(q, true)))
                 {
                     printf("From Logger queue %d: %s", i, msg);
-                    //fprintf(ls->fp, "From Logger: %s", msg);
+                    fprintf(ls->fp, "From Logger queue %d: %s", i, msg);
                     sequeue_done_reading(q);
+                    fflush(ls->fp);
                 }
             }
         }
