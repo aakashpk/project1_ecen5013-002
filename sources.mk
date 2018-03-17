@@ -3,12 +3,13 @@ MAIN_SOURCE=src/main.c
 COMMON_SOURCES=src/socketserver.c \
 			src/common_queue.c \
 			src/bidirectional_queue.c \
-			src/single_ended_queue.c
+			src/single_ended_queue.c\
+			src/tasks.c
 
 BBB_SOURCES=src/tempsensor.c\
 	src/my_i2c.c\
 	src/lightsensor.c\
-	src/sensortask.c
+	src/sensordata.c
 
 HOST_SOURCES=src/dummydata.c
 

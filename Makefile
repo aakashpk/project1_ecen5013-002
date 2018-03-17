@@ -14,7 +14,9 @@ INCLUDE=-I./inc
 
 CFLAGS=-std=$(CSTD)\
 	-lpthread\
-	-Wall
+	-Wall\
+	-lm\
+	-g
 #	-O0\
 #	-Werror
 
@@ -53,7 +55,7 @@ ifeq ($(PLATFORM),BBB)
 	scp $(TARGET) root@192.168.7.2:/home/proj1/$(TARGET)
 else
 	$(CC) $(OBJECTS) -o $(TARGET) $(CFLAGS) $(INCLUDE)
-	./$(TARGET)
+	./$(TARGET) -f proj1logfile.log
 endif
 
 %.o: %.c
@@ -61,6 +63,10 @@ endif
 
 client:$(CLIENT_SOURCES)
 	$(CC) -o $@ $(CLIENT_SOURCES) $(INCLUDE)
+ifeq ($(PLATFORM),BBB)
+	scp $@ root@192.168.7.2:/home/proj1/$@
+endif
+
 
 #rule to run unit tests
 test:$(TEST_TARGETS)
