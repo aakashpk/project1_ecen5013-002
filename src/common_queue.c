@@ -1,3 +1,6 @@
+// _GNU_SOURCE must be defined before stdlib.h (from common_queue.h) for
+// alligned_alloc() to be declared.
+#define _GNU_SOURCE
 #include "common_queue.h"
 
 // Only for GCC
