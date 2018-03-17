@@ -1,48 +1,94 @@
 #include "logger.h"
 
-/*
- * Notes from arch diagram
- *
- * Initialization of primary logging thread in main Thread-local
- * storage of logging queue in each thread Each logging queue is
- * registered with main logger (either through global logging
- * pointer, or logger pointer passed into each thread).  Logging
- * posts by thread should not be blocking. Consuming log messages
- * from thread's queue handled by logger thread.  Use single
- * condition variable for notifying logger upon adding records. Will
- * cause minimal blocking if multiple threads attempt to signal
- * simultaniously.
- *
- */
+// TLS members
+// Todo - may need extern and/or static
+__thread sequeue *logging_queue_tls;
+__thread int queue_index_tls;
 
-// Todo create single_ended_queue
-
-#define MAX_QUEUES 256
-
-typedef logger_struct
+void *log_flush_task(void *arg)
 {
-    single_ended_queue* queues[MAX_QUEUES];
-    FILE *fp;
-    // rotation settings
-} logger_struct;
-
-
-// Called by main?
-void initialize_logger(logger_struct *ls)
-{
+    logger_struct *ls = (logger_struct *)arg;
+    while (1)
+    {
+        // Scanning all queues, but could also just stop at
+        // first null queue, since we aren't deleting any queues.
+        for (int i = 0; i < MAX_QUEUES; i++)
+        {
+            sequeue *q = ls->queues[i];
+            if (q)
+            {
+                char *msg;
+                // While more data available - no blocking
+                while ((msg = (char *)sequeue_read_next(q, true)))
+                {
+                    printf("From Logger queue %d: %s", i, msg);
+                    //fprintf(ls->fp, "From Logger: %s", msg);
+                    sequeue_done_reading(q);
+                }
+            }
+        }
+        usleep(1000); // 1 ms sleep
+    }
 }
 
-void add_thread(logger_struct *ls)
+void initialize_logger(logger_struct *ls, char *filename)
 {
+    // Zero-out queues array
+    memset(ls->queues, 0, sizeof(ls->queues));
+
+    // Open file
+    if (!(ls->fp = fopen(filename, "w")))
+    {
+        printf("Error opening file %s\n", filename);
+        abort();
+    }
+
+    if (!(ls->queues_lock_m = malloc(sizeof(pthread_mutex_t))))
+    {
+        abort();
+    }
+    if (pthread_mutex_init(ls->queues_lock_m, NULL))
+    {
+        abort();
+    }
+
+    pthread_t tid;
+    pthread_create(&tid, NULL, log_flush_task, ls);
+    //pthread_join(tid, NULL);
 }
 
-// Called by some timer system,
-// or just another logger thread which
-// sleeps for a bit between each flush
-// Or this could be gatted by waiting on CVs
-//  https://stackoverflow.com/questions/2850091/wait-on-multiple-condition-variables-on-linux-without-unnecessary-sleeps/2873123
-void flush_queues(logger_struct *ls)
+void enable_logging_in_thread(logger_struct *ls)
 {
+    logging_queue_tls = NULL;
+    pthread_mutex_lock(ls->queues_lock_m);
+    for (int i = 0; i < MAX_QUEUES; i++)
+    {
+        if (!ls->queues[i])
+        {
+            if (!(logging_queue_tls = malloc(sizeof(sequeue))))
+            {
+                printf("error allocating TLS queue\n");
+            }
+            sequeue_init(logging_queue_tls, MAX_LOG_LINE, MAX_PENDING_LOGS);
+            ls->queues[i] = logging_queue_tls;
+            break;
+        }
+    }
+    pthread_mutex_unlock(ls->queues_lock_m);
+
+    if (!logging_queue_tls)
+    {
+        // Could not find available logging queue
+        abort();
+    }
 }
 
-
+void log_printf(char *fmt, ...)
+{
+    char *spot = (char *)sequeue_next_empty(logging_queue_tls, false);
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(spot, MAX_LOG_LINE, fmt, args);
+    sequeue_done_writing(logging_queue_tls);
+    va_end(args);
+}

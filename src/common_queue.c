@@ -123,13 +123,53 @@ void boundary_done_with_active_element(queue_boundary *b)
     // Special handling for TAIL boundary
     if (b->previous_boundary == b->attr->head_boundary) // Tail if previous is head
     {
+        pthread_mutex_lock(&b->attr->data_protection_m);
         b->attr->num_free_elements++;
+        pthread_mutex_unlock(&b->attr->data_protection_m);
     }
 
     if (b->previous_boundary->blocking_cv)
     { // Signal potentially waiting thread
         if (!b->previous_boundary->blocking_m)
             abort();
+
+        // TODO - for greater reliability, should change condition CV depends on within mutex
+        // https://docs.oracle.com/cd/E19455-01/806-5257/6je9h032r/index.html
+        /* These conditions are:
+            num_free_elements
+            active_element
+            next_element
+
+            Seems like there can definitely be an issue if:
+                blockee checks and determines resource not available.
+                --- context switch ---
+                resource becomes available by blocker
+                blocker signals resource available
+                --- context switch ---
+                blockee takes mutex
+                blockee waits ... forever
+
+                This is resolved by blockee taking mutex before checking condition,
+                but this also requires blocker to take mutex before signaling,
+                otherwise signal could still get lost between condition check and wait.
+
+                blockee takes mutex
+                blockee checks and determines resource not available.
+                --- context switch ---
+                resource becomes available by blocker
+                blocker attempts to take mutex in order to signal resource available, but can't yet and must wait
+                --- context switch ---
+                blockee waits and gives up mutex while waiting
+                --- context switch ---
+                blocker finally gets mutex in order signal resource availalability
+                blocker signals resource available
+                blocker gives up mutex (could happen after a few context switches too)
+                --- context switch ---
+                blockee receives signal and takes mutex
+                blockee gives up mutex
+
+        */
+
 
         // Signal previous boundary
         pthread_mutex_lock(b->previous_boundary->blocking_m);
@@ -148,6 +188,10 @@ uint8_t *calculate_next_element(uint8_t *current, common_queue_attributes *attr)
                        ((uintptr_t)(current + attr->element_size) & attr->buffer_mask));
 }
 
+/* TODO - replace force_noblock with a timeout duration
+Duration of zero means return null immediately instead of blocking.
+Max timeout of 32-bit int in microseconds is about an hour
+*/
 uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
 {
     if (!b)
@@ -164,6 +208,7 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
         decrement free elements
     */
 
+
     // Check for conflict using next boundary
     if (((b == b->attr->head_boundary) && // This is the special HEAD boundary AND
          (!b->attr->num_free_elements))   // No free elements
@@ -178,8 +223,14 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
             if (!b->blocking_m)
                 abort();
 
+            // TODO - for greater reliability, should wrap CV in while (condition) loop
+            // https://docs.oracle.com/cd/E19455-01/806-5257/6je9h032r/index.html
+
             // Block on next boundary
             pthread_mutex_lock(b->blocking_m);
+            // TODO - should just check again here -
+            //  still see efficiencies to be gaining by checking once first outside of loop before
+            //  CV overhead.
             pthread_cond_wait(b->blocking_cv, b->blocking_m);
             pthread_mutex_unlock(b->blocking_m);
 
@@ -217,8 +268,13 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
 
     if (b == b->attr->head_boundary) // This is the special HEAD boundary
     {
-        // Todo - may need greater mutex protection for element count
-        b->attr->num_free_elements--; // this is not thread safe
+        // Mutext protection only needed for modifying num_free_elements.
+        // Not protection needed for reading.
+        // Only reader who cares about low number is head, which is also the one decrementing.
+        // Tail, which is incrementing, does not care about the value.
+        pthread_mutex_lock(&b->attr->data_protection_m);
+        b->attr->num_free_elements--;
+        pthread_mutex_unlock(&b->attr->data_protection_m);
     }
 
     // Set next element location (accounting for wrap-around)

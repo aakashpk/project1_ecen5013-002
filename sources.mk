@@ -1,6 +1,7 @@
 MAIN_SOURCE=src/main.c
 
 COMMON_SOURCES=src/socketserver.c \
+			src/logger.c \
 			src/common_queue.c \
 			src/bidirectional_queue.c \
 			src/single_ended_queue.c\

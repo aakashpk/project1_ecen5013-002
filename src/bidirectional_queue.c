@@ -49,6 +49,12 @@ queue_status bdqueue_init(bdqueue *q, size_t element_size, size_t total_elements
 
     q->attr.head_boundary = &q->write_request_b;
 
+    if (pthread_mutex_init(&q->attr.data_protection_m, NULL))
+    {
+        //perror("issue with mutex init");
+        abort();
+    }
+
     return QUEUE_SUCCESS;
 }
 

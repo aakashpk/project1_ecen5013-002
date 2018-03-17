@@ -7,7 +7,7 @@ PLATFORM=HOST
 TARGET=project1
 
 CC=gcc
-CSTD=c99
+CSTD=gnu99
 
 INCLUDE=-I./inc
 

@@ -11,8 +11,9 @@ typedef struct
 {
     uint8_t *buffer_base;
     size_t element_size;
-    size_t num_free_elements;      // needed to handle adding first element
-    uintptr_t buffer_mask;         // = size-1;
+    size_t num_free_elements;          // needed to handle adding first element
+    pthread_mutex_t data_protection_m; // Needed for negotiating read/write access for num_free_elements
+    uintptr_t buffer_mask;             // = size-1;
     queue_boundary *head_boundary; // Required for handling first element
 } common_queue_attributes;
 

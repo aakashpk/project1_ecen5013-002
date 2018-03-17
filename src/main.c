@@ -13,12 +13,23 @@
 #include "dummydata.h"
 #endif
 
+#include "logger.h"
+
 #define THREAD_NUMBER 3
 
 int main(int argc, char **argv)
 {
+    static char logfilename[]="project1log.log";
 
-    static char logfilename[] = "project1log.log";
+    logger_struct logger;
+    initialize_logger(&logger, logfilename);
+
+    enable_logging_in_thread(&logger);
+
+    log_printf("Main says hi with number %d\n", 5);
+
+    while(1);
+
     extern char *optarg;
     extern int optind;
     int optret;
