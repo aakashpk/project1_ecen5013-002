@@ -1,4 +1,5 @@
-#include "sensortask.h"
+#include "sensordata.h"
+#include <math.h>
 
 float get_temp(uint8_t unit)
 {
@@ -20,12 +21,37 @@ float get_temp(uint8_t unit)
 
 float get_light()
 {
-    float light;
+     float luxVal = 0.0, ch0,ch1,ratio;
 
     // read channel 1 for visible light and multiply by channel1 rv gain 
-    light=read_reg_light_word(DATA1) * RV_FLU_LOWGAIN_CH1;
+    ch0=read_reg_light_word(DATA0);// * RV_FLU_LOWGAIN_CH1;
+    ch1=read_reg_light_word(DATA1);
+
+    if(ch0==0) ratio=ch1;
+    else ratio=ch1/ch0;
     
-    return light;
+    if (ratio <= 0.5)
+    {
+        luxVal = (0.0304 * ch0) - ((0.062 * ch0) * (pow((ch1/ch0), 1.4)));
+    }  
+    else if (ratio <= 0.61)
+    {
+        luxVal = (0.0224 * ch0) - (0.031 * ch1);
+    }
+    else if (ratio <= 0.8)
+    {
+        luxVal = (0.0128 * ch0) - (0.0153 * ch1);
+    }
+    else if (ratio <= 1.3)
+    {
+        luxVal = (0.00146 * ch0) - (0.00112*ch1);
+    }
+
+    #ifdef SENSORDEBUG
+    printf("Ch0:%lf Ch1:%lf Ratio: %lf , luxValue: %lf\n",ch0,ch1,ratio,luxVal);
+    #endif
+    
+    return luxVal;
 
 } 
 
@@ -45,29 +71,4 @@ void sensors_test_print(void)
     printf("\n"); 
 }
 
-/**
- * @brief Initializes the light sensor
- * this will also do the startup test to see if I2C comms
- * is working
- * and sets up timer to periodically log temperature
- * 
- * 
- */
-void * temperature_task()
-{
 
-    return NULL;
-}
-
-/**
- * @brief Initializes the light sensor
- * Does the startup test, and checks the sensor id
- * Sets up periodic timer to log light data 
- * 
- */
-void * light_task()
-{
-
-    return NULL;
-
-}

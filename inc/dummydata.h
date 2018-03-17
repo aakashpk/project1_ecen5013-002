@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <stdint.h>
 
+#include "bidirectional_queue.h"
+
 #define TEMP_MAX 35
 #define TEMP_MIN 15
 
@@ -17,13 +19,7 @@
 #define TODEGK(c) ((c)+273)
 #define TODEGF(c) (((c)*9/5)+32)
 
-time_t t;
-
-typedef struct thread_param
-{
-    volatile int keep_thread_alive;
-
-} thread_param_t;
+time_t t; // For random data 
 
 
 /**
@@ -40,10 +36,6 @@ float get_temp(uint8_t unit);
  */
 float get_light();
 
-void * temperature_task();
-
-
-void * light_task();
 
 
 
