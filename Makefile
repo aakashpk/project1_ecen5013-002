@@ -1,5 +1,5 @@
 
-.PHONY: all clean test
+.PHONY: all build run clean test
 
 include sources.mk
 
@@ -49,14 +49,17 @@ OBJECTS=$(COMMON_OBJECTS) $(HOST_OBJECTS) $(MAIN_OBJECT)
 endif
 
 #default build , changes based on platform
-all:$(OBJECTS)
-ifeq ($(PLATFORM),BBB)
+build: $(OBJECTS)
 	$(CC) $(OBJECTS) -o $(TARGET) $(CFLAGS) $(INCLUDE)
+
+run: build
+ifeq ($(PLATFORM),BBB)
 	scp $(TARGET) root@192.168.7.2:/home/proj1/$(TARGET)
 else
-	$(CC) $(OBJECTS) -o $(TARGET) $(CFLAGS) $(INCLUDE)
 	./$(TARGET) -f proj1logfile.log
 endif
+
+all: run
 
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE)
@@ -69,7 +72,7 @@ endif
 
 
 #rule to run unit tests
-test:$(TEST_TARGETS)
+test: $(TEST_TARGETS)
 	./$^
 
 # generates executable for each unit test file\
