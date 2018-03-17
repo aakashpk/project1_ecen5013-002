@@ -1,0 +1,7 @@
+test
+project1
+*.o
+*.out
+*.log
+*.swp
+
