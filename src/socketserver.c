@@ -94,6 +94,9 @@ void *socket_thread(void *thread_param)
     socket_fd = create_socket_server();
     client_fd = accept_connection(socket_fd);
 
+    enable_logging_in_thread(p1->logger);
+    log_printf("Socket thread says hi\n");
+
     while (p1->keep_thread_alive)
     {
         // This has to be replaced with request response code
@@ -105,6 +108,7 @@ void *socket_thread(void *thread_param)
         sleep(1);
 
         printf("Received at [%ld]: %s\n", time(NULL), message);
+        log_printf("Received at [%ld]: %s\n", time(NULL), message);
     }
 
     delete_socket(socket_fd);

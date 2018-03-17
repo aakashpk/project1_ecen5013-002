@@ -15,10 +15,9 @@ char *data_header_type_strings[] = {
     "Light",
 };
 
-logged_data_t *add_to_bdqueue(bdqueue *queue, data_header_type_t type)
+logged_data_t *dispatch_request(bdqueue *queue, data_header_type_t type)
 {
-    logged_data_t *msg;
-    msg = (logged_data_t *)bdqueue_next_empty_request(queue);
+    logged_data_t *msg = (logged_data_t *)bdqueue_next_empty_request(queue);
     msg->type = type;
     msg->req_time = time(NULL);
     bdqueue_done_writing_request(queue);
@@ -81,6 +80,9 @@ void *temperature_task(void *thread_param)
 
     thread_param_t *p1 = (thread_param_t *)thread_param;
 
+    enable_logging_in_thread(p1->logger);
+    log_printf("Temperature task started\n");
+
     while (p1->keep_thread_alive)
     {
         logged_data_t *msg = (logged_data_t *)bdqueue_next_request(p1->temp_q, false);
@@ -98,6 +100,10 @@ void *temperature_task(void *thread_param)
             abort(); // wrong queue
             break;
         }
+
+        log_printf("Temperature task: request time %ld, response time %ld, msg type %s, value %f\n",
+            msg->req_time, msg->res_time, data_header_type_strings[msg->type],
+            msg->common.value);
 
         bdqueue_done_reading_request_and_writing_response(p1->temp_q);
     }
@@ -121,6 +127,9 @@ void *light_task(void *thread_param)
 
     thread_param_t *p1 = (thread_param_t *)thread_param;
 
+    enable_logging_in_thread(p1->logger);
+    log_printf("Light task started\n");
+
     while (p1->keep_thread_alive)
     {
         logged_data_t *msg = (logged_data_t *)bdqueue_next_request(p1->light_q, false);
@@ -138,6 +147,10 @@ void *light_task(void *thread_param)
             abort(); // wrong queue
             break;
         }
+
+        log_printf("Light task: request time %ld, response time %ld, msg type %s, value %f\n",
+            msg->req_time, msg->res_time, data_header_type_strings[msg->type],
+            msg->common.value);
 
         bdqueue_done_reading_request_and_writing_response(p1->light_q);
     }

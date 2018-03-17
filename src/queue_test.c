@@ -7,6 +7,7 @@
  * @date 2018-02-20
  */
 
+#if 0
 #include <stdio.h>
 
 #include "single_ended_queue.h"
@@ -15,11 +16,13 @@
 typedef enum {
     HEARTBEAT,
     TEMPERATURE,
+    LIGHT,
 } example_msg_types;
 
 char *example_msg_type_strings[] = {
     "Heartbeat",
     "Temperature",
+    "Light",
 };
 
 typedef struct
@@ -251,3 +254,4 @@ int main()
 
     return 0;
 }
+#endif

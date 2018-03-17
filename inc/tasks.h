@@ -6,6 +6,8 @@
 #include "dummydata.h"
 #endif
 
+#include "logger.h"
+
 typedef struct thread_param
 {
     bdqueue *temp_q;
@@ -16,7 +18,7 @@ typedef struct thread_param
     // Can use sig_atomic_t if this was being
     // modified in any more complicated manner
     volatile int keep_thread_alive;
-
+    logger_struct * logger;
 } thread_param_t;
 
 typedef enum {
@@ -40,11 +42,14 @@ typedef struct
         {
             float value;
         } temperature;
-
         struct
         {
             float value;
         } light;
+        struct
+        {
+            float value;
+        } common; // Easy way to access both sensor values
     };
 } logged_data_t;
 
