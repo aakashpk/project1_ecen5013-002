@@ -4,16 +4,20 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build queue",
+            "label": "build all",
             "type": "shell",
-            "command": "gcc",
+            "command": "make",
             "args": [
-                "-Wall", "-Werror", "-g", "src/queue.c"
+                "clean",
+                "build"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
         }
     ]
 }
