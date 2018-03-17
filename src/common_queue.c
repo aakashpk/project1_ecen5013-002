@@ -10,17 +10,18 @@ size_t pow2_roundup(size_t n)
 {
     // Below formula does not handle 0 and 1 correctly.
     // Also faster to handle 2 here too.
-    if (n <= 2) return n;
+    if (n <= 2)
+        return n;
 
-    // TODO - ensure this works the same on 32-bit architecture.
-    // May need to choose clz vs clzll.
-    // Start with 0x100...000, then shift this over one less than number of
-    // leading zeros of one less than input value.
-    #ifdef ___X86_64__
+// TODO - ensure this works the same on 32-bit architecture.
+// May need to choose clz vs clzll.
+// Start with 0x100...000, then shift this over one less than number of
+// leading zeros of one less than input value.
+#ifdef ___X86_64__
     return (1UL << (sizeof(size_t) * 8 - 1)) >> (__builtin_clzll(n - 1) - 1);
-    #else
+#else
     return (1UL << (sizeof(size_t) * 8 - 1)) >> (__builtin_clzl(n - 1) - 1);
-    #endif
+#endif
 }
 
 void init_cv_and_mutex(pthread_cond_t **c, pthread_mutex_t **m)
@@ -127,7 +128,8 @@ void boundary_done_with_active_element(queue_boundary *b)
 
     if (b->previous_boundary->blocking_cv)
     { // Signal potentially waiting thread
-        if (!b->previous_boundary->blocking_m) abort();
+        if (!b->previous_boundary->blocking_m)
+            abort();
 
         // Signal previous boundary
         pthread_mutex_lock(b->previous_boundary->blocking_m);
@@ -136,9 +138,10 @@ void boundary_done_with_active_element(queue_boundary *b)
     }
 }
 
-uint8_t *calculate_next_element(uint8_t *current, common_queue_attributes* attr)
+uint8_t *calculate_next_element(uint8_t *current, common_queue_attributes *attr)
 {
-    if (!current || !attr) abort();
+    if (!current || !attr)
+        abort();
 
     // Calculate next element location (accounting for wrap-around)
     return (uint8_t *)((uintptr_t)attr->buffer_base +
@@ -147,8 +150,10 @@ uint8_t *calculate_next_element(uint8_t *current, common_queue_attributes* attr)
 
 uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
 {
-    if (!b) abort();
-    if (!b->next_element) abort();
+    if (!b)
+        abort();
+    if (!b->next_element)
+        abort();
 
     /* Only block if:
         No free elements and HEAD
@@ -161,16 +166,17 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
 
     // Check for conflict using next boundary
     if (((b == b->attr->head_boundary) && // This is the special HEAD boundary AND
-         (!b->attr->num_free_elements)) // No free elements
+         (!b->attr->num_free_elements))   // No free elements
         ||
-        ((b != b->attr->head_boundary) && // Not HEAD AND
+        ((b != b->attr->head_boundary) &&                          // Not HEAD AND
          ((b->next_element == b->next_boundary->active_element) || // Boundary issue
           (b->next_element == b->next_boundary->next_element))))
     {
         // Check if blocking required
         if (b->blocking_cv && !force_noblock)
         {
-            if (!b->blocking_m) abort();
+            if (!b->blocking_m)
+                abort();
 
             // Block on next boundary
             pthread_mutex_lock(b->blocking_m);
@@ -179,10 +185,10 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
 
             // Do another error check just for debugging purposes
             if (((b == b->attr->head_boundary) && // This is the special HEAD boundary AND
-                (!b->attr->num_free_elements)) // No free elements
+                 (!b->attr->num_free_elements))   // No free elements
                 ||
                 ((b->next_element == b->next_boundary->active_element) || // Boundary issue
-                (b->next_element == b->next_boundary->next_element)))
+                 (b->next_element == b->next_boundary->next_element)))
             {
                 abort();
             }
@@ -199,7 +205,8 @@ uint8_t *boundary_get_next_active_element(queue_boundary *b, bool force_noblock)
     // Not allowing multiple active elements.
     // Forces previous active element to advance if not NULL.
     // So signal previous boundary if active element is not NULL.
-    if (b->active_element) boundary_done_with_active_element(b);
+    if (b->active_element)
+        boundary_done_with_active_element(b);
     // Some redundancies in above function, but worth it to avoid code dulpication
 
     // No need for data protection mutex if active element set before advancing next.
@@ -235,7 +242,8 @@ queue_status common_queue_init(common_queue_attributes *attr, size_t element_siz
     attr->buffer_base = aligned_alloc(total_size, total_size);
 
     // Check that alloc succeeded
-    if (!attr->buffer_base) return QUEUE_FAILURE;
+    if (!attr->buffer_base)
+        return QUEUE_FAILURE;
 
     attr->element_size = element_size;
     attr->buffer_mask = (uintptr_t)(total_size - 1);
@@ -243,7 +251,6 @@ queue_status common_queue_init(common_queue_attributes *attr, size_t element_siz
 
     return QUEUE_SUCCESS;
 }
-
 
 queue_status common_queue_destroy(common_queue_attributes *attr)
 {

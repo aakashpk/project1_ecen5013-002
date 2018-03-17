@@ -15,35 +15,31 @@
 #define THIGH (uint8_t)0x03
 
 // Temperature unit conversion
-#define TODEGK(c) ((c)+273)
-#define TODEGF(c) (((c)*9/5)+32)
-
+#define TODEGK(c) ((c) + 273)
+#define TODEGF(c) (((c)*9 / 5) + 32)
 
 //*** Byte shift required for register read and write operations
 
 //Convert 16bit register read to 12 bit temp with the lowest byte shifted out
-#define U16TOTEMPOUT(reg_16) (((((reg_16)>>8)&0x00F0)|(((reg_16)<<8)&0xFF00))>>4)
+#define U16TOTEMPOUT(reg_16) (((((reg_16) >> 8) & 0x00F0) | (((reg_16) << 8) & 0xFF00)) >> 4)
 
 // Converts 12 bit register value to temperature,
 //takes care of -ve temperature as well
-#define TOTEMPVAL(reg12read) ((reg12read)>0x7FF)?((reg12read*0.0625)-256):(reg12read*0.0625)
+#define TOTEMPVAL(reg12read) ((reg12read) > 0x7FF) ? ((reg12read * 0.0625) - 256) : (reg12read * 0.0625)
 
 // Register read returns high byte as low byte after read, swap bytes to get correct value
-#define BYTESWAP(reg_16) ((((reg_16)>>8)&0x00FF)|(((reg_16)<<8)&0xFF00))
+#define BYTESWAP(reg_16) ((((reg_16) >> 8) & 0x00FF) | (((reg_16) << 8) & 0xFF00))
 
-
-#define TEMP12TOU16(reg_12) ((((reg_12)>>4)&0x00FF)|(((reg_12)<<12)&0xF000))
+#define TEMP12TOU16(reg_12) ((((reg_12) >> 4) & 0x00FF) | (((reg_12) << 12) & 0xF000))
 
 #define TEMP_SD (uint16_t)0x0100
 #define TEMP_TM (uint16_t)0x0200
 #define TEMP_POL (uint16_t)0x0400
-#define TEMP_FAULT(x) (uint16_t)((((uint16_t)(x)<<3))&(uint16_t)(0x1800))
-#define TEMP_CONV_RATE(x) (uint16_t)((((uint16_t)(x)<<6))&(uint16_t)(0x00C0))
+#define TEMP_FAULT(x) (uint16_t)((((uint16_t)(x) << 3)) & (uint16_t)(0x1800))
+#define TEMP_CONV_RATE(x) (uint16_t)((((uint16_t)(x) << 6)) & (uint16_t)(0x00C0))
 #define TEMP_EM_MODE (uint16_t)0x0010
 
-
 int8_t i2c_open_temp();
-
 
 /**
  * @brief Function to read a register from the TMP102 sensor
@@ -59,18 +55,14 @@ uint16_t read_reg_temp(uint8_t reg);
  */
 int8_t temp_sensor_init(void);
 
-
 /**
- * @brief 
- * 
- * @param reg 
- * @param value 
+ * @brief
+ *
+ * @param reg
+ * @param value
  */
-int8_t write_reg_temp(uint8_t reg,uint16_t value);
-
+int8_t write_reg_temp(uint8_t reg, uint16_t value);
 
 void temp_sensor_raise_alert();
-
-
 
 #endif

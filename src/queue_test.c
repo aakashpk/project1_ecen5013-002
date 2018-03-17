@@ -12,14 +12,12 @@
 #include "single_ended_queue.h"
 #include "bidirectional_queue.h"
 
-
-typedef enum
-{
+typedef enum {
     HEARTBEAT,
     TEMPERATURE,
 } example_msg_types;
 
-char* example_msg_type_strings[] = {
+char *example_msg_type_strings[] = {
     "Heartbeat",
     "Temperature",
 };
@@ -29,8 +27,7 @@ typedef struct
     example_msg_types type;
     uint8_t send_idx;
     uint8_t response_idx;
-    union
-    {
+    union {
         struct
         {
             uint8_t foo;
@@ -80,7 +77,6 @@ int main()
 
     bdqueue_destroy(myq);
 
-
     if (bdqueue_init(myq, sizeof(example_msg), 5) == QUEUE_FAILURE)
     {
         printf("failed init\n");
@@ -94,7 +90,7 @@ int main()
         uint8_t *data = bdqueue_next_empty_request(myq);
         printf("empty \t\tpad %d %p\n", i, data);
 
-        example_msg *msg = (example_msg*)data;
+        example_msg *msg = (example_msg *)data;
         msg->send_idx = i;
         if (i % 2)
         {
@@ -118,7 +114,7 @@ int main()
         data = bdqueue_next_empty_request(myq);
         printf("\nempty \t\t%d %p\n", i, data);
 
-        msg = (example_msg*)data;
+        msg = (example_msg *)data;
         msg->send_idx = i;
         if (i % 2)
         {
@@ -130,35 +126,33 @@ int main()
         }
         bdqueue_done_writing_request(myq);
 
-
         // Responder / Sensor Task
 
         data = bdqueue_next_request(myq, false);
         printf("request \t%d %p\n", i, data);
 
-        msg = (example_msg*)data;
+        msg = (example_msg *)data;
         msg->response_idx = i;
         switch (msg->type)
         {
-            case HEARTBEAT:
-                msg->heartbeat.foo = i * 10;
-                break;
-            case TEMPERATURE:
-                msg->temperature.temp_value = i * 10 + i;
-                break;
+        case HEARTBEAT:
+            msg->heartbeat.foo = i * 10;
+            break;
+        case TEMPERATURE:
+            msg->temperature.temp_value = i * 10 + i;
+            break;
         }
         bdqueue_done_reading_request_and_writing_response(myq);
 
         // Requester / Main Task
-        msg = (example_msg*)bdqueue_next_response(myq, false);
-        printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void*)msg,
-            example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
+        msg = (example_msg *)bdqueue_next_response(myq, false);
+        printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void *)msg,
+               example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
 
         bdqueue_done_reading_response(myq);
     }
 
     bdqueue_destroy(myq);
-
 
     myq = NULL;
 
@@ -193,7 +187,6 @@ int main()
 
     sequeue_destroy(myseq);
 
-
     if (sequeue_init(myseq, sizeof(example_msg), 5) == QUEUE_FAILURE)
     {
         printf("failed init\n");
@@ -207,7 +200,7 @@ int main()
         uint8_t *data = sequeue_next_empty(myseq, true);
         printf("empty \t\tpad %d %p\n", i, data);
 
-        example_msg *msg = (example_msg*)data;
+        example_msg *msg = (example_msg *)data;
         msg->send_idx = i;
         if (i % 2)
         {
@@ -231,7 +224,7 @@ int main()
         data = sequeue_next_empty(myseq, true);
         printf("\nempty \t\t%d %p\n", i, data);
 
-        msg = (example_msg*)data;
+        msg = (example_msg *)data;
         msg->send_idx = i;
         if (i % 2)
         {
@@ -245,18 +238,16 @@ int main()
         }
         sequeue_done_writing(myseq);
 
-
         // Reader task
 
-        msg = (example_msg*)sequeue_read_next(myseq, true);
-        printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void*)msg,
-            example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
+        msg = (example_msg *)sequeue_read_next(myseq, true);
+        printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void *)msg,
+               example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
 
         sequeue_done_reading(myseq);
     }
 
     sequeue_destroy(myseq);
-
 
     return 0;
 }

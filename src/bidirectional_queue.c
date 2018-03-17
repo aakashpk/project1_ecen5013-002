@@ -1,6 +1,5 @@
 #include "bidirectional_queue.h"
 
-
 // Non-Blocking functions
 
 /*
@@ -15,7 +14,7 @@
    https://stackoverflow.com/questions/227897/how-to-allocate-aligned-memory-only-using-the-standard-library
    Initializes pointers and mask Returns error status
    */
-queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements)
+queue_status bdqueue_init(bdqueue *q, size_t element_size, size_t total_elements)
 {
     if (common_queue_init(&q->attr, element_size, total_elements) == QUEUE_FAILURE)
     {
@@ -53,8 +52,6 @@ queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements
     return QUEUE_SUCCESS;
 }
 
-
-
 /*
    note, this should be done last after threads depending on queue are killed.
    frees memory
@@ -73,7 +70,6 @@ queue_status bdqueue_destroy(bdqueue *q)
     return QUEUE_SUCCESS;
 }
 
-
 /*
    Called by requester.
    Provides pointer to next available slot for writing request.
@@ -81,18 +77,19 @@ queue_status bdqueue_destroy(bdqueue *q)
    */
 uint8_t *bdqueue_next_empty_request(bdqueue *q)
 {
-    if (!q) abort();
+    if (!q)
+        abort();
 
     return boundary_get_next_active_element(&q->write_request_b, false);
 }
 
-
 /*
     Called by requester
 */
-void bdqueue_done_writing_request(bdqueue* q)
+void bdqueue_done_writing_request(bdqueue *q)
 {
-    if (!q) abort();
+    if (!q)
+        abort();
 
     boundary_done_with_active_element(&q->write_request_b);
 }
@@ -100,9 +97,10 @@ void bdqueue_done_writing_request(bdqueue* q)
 /*
    Called by responder
    */
-void bdqueue_done_reading_request_and_writing_response(bdqueue* q)
+void bdqueue_done_reading_request_and_writing_response(bdqueue *q)
 {
-    if (!q) abort();
+    if (!q)
+        abort();
 
     boundary_done_with_active_element(&q->read_request_write_response_b);
 }
@@ -110,9 +108,10 @@ void bdqueue_done_reading_request_and_writing_response(bdqueue* q)
 /*
    Called by requester
    */
-void bdqueue_done_reading_response(bdqueue* q)
+void bdqueue_done_reading_response(bdqueue *q)
 {
-    if (!q) abort();
+    if (!q)
+        abort();
 
     boundary_done_with_active_element(&q->read_response_b);
 }
@@ -123,9 +122,10 @@ void bdqueue_done_reading_response(bdqueue* q)
    Called by responder
    Provides pointer to next available request for responder to read
    */
-uint8_t* bdqueue_next_request(bdqueue* q, bool force_noblock)
+uint8_t *bdqueue_next_request(bdqueue *q, bool force_noblock)
 {
-    if (!q) abort();
+    if (!q)
+        abort();
 
     return boundary_get_next_active_element(&q->read_request_write_response_b, force_noblock);
 }
@@ -134,9 +134,10 @@ uint8_t* bdqueue_next_request(bdqueue* q, bool force_noblock)
    Called by requester
    Provides pointer to next available response for requester to read
    */
-uint8_t* bdqueue_next_response(bdqueue* q, bool force_noblock)
+uint8_t *bdqueue_next_response(bdqueue *q, bool force_noblock)
 {
-    if (!q) abort();
+    if (!q)
+        abort();
 
     return boundary_get_next_active_element(&q->read_response_b, force_noblock);
 }

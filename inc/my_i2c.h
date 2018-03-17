@@ -1,9 +1,7 @@
 #ifndef MY_I2C_H
 #define MY_I2C_H
 
-
 #define _XOPEN_SOURCE 500
-
 
 #include <stdint.h>
 #include <stdio.h>
@@ -17,12 +15,9 @@
 #include <errno.h>
 //#include <i2c/smbus.h>
 
-
 #define I2CBUSNAME "/dev/i2c-2"
 
-
 int8_t i2c_open();
-
 
 void i2c_close(int8_t file);
 

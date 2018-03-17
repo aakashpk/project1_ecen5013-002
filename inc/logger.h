@@ -4,15 +4,13 @@
 #include <stdint.h>
 #include <time.h>
 
-#define DISP_TIME(t) ((t).tv_sec,(t).tv_nsec)
+#define DISP_TIME(t) ((t).tv_sec, (t).tv_nsec)
 
-typedef enum payload_type
-{
+typedef enum payload_type {
     TEMPERATURE,
     LIGHT,
     SYSTEM
-}payload_t;
-
+} payload_t;
 
 typedef struct logdata_type
 {
@@ -21,8 +19,7 @@ typedef struct logdata_type
     uint32_t checksum;
     float value; // TODO: change to double ??
 
-}logdata_t;
-
+} logdata_t;
 
 /**
  * @brief Function to create a log item
@@ -36,20 +33,13 @@ typedef struct logdata_type
  *
  * @return pointer to location of created log
  */
-logdata_t * createLog(logdata_t * log, payload_t dtype, float value);
+logdata_t *createLog(logdata_t *log, payload_t dtype, float value);
 
 uint8_t add_log(logdata_t log);
 //TODO: Add another parameter with the pointer to queue where the log has to be added to, and change return type accordingly
 
-uint32_t calc_checksum(float value,struct timespec timestamp, payload_t dtype);
+uint32_t calc_checksum(float value, struct timespec timestamp, payload_t dtype);
 
-
-logdata_t * log_initialize(size_t loglength);
-
-
-
-
-
-
+logdata_t *log_initialize(size_t loglength);
 
 #endif

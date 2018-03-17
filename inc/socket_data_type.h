@@ -14,16 +14,16 @@
 
 #define SOCKET_NAME "mysocket"
 
-typedef struct 
+typedef struct
 {
     // temp/light ?
     //req time
 
-}socket_data_req_t;
+} socket_data_req_t;
 
-typedef struct 
+typedef struct
 {
     // value
     //response time
 
-}socket_data_res_t;
+} socket_data_res_t;

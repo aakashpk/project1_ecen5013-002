@@ -1,4 +1,4 @@
-# pragma once
+#pragma once
 
 #ifdef BBB
 #include "sensordata.h"
@@ -8,10 +8,10 @@
 
 typedef struct thread_param
 {
-    bdqueue * temp_q;
-    bdqueue * light_q;
+    bdqueue *temp_q;
+    bdqueue *light_q;
 
-    char * logfile_name;
+    char *logfile_name;
 
     // Can use sig_atomic_t if this was being
     // modified in any more complicated manner
@@ -19,14 +19,13 @@ typedef struct thread_param
 
 } thread_param_t;
 
-typedef enum
-{
+typedef enum {
     HEARTBEAT,
     TEMPERATURE,
     LIGHT,
 } data_header_type_t;
 
-extern char* data_header_type_strings[] ;
+extern char *data_header_type_strings[];
 
 typedef struct
 {
@@ -36,8 +35,7 @@ typedef struct
     long req_time;
     long res_time;
 
-    union
-    {
+    union {
         struct
         {
             float value;
@@ -58,7 +56,7 @@ typedef struct
  *
  *
  */
-void * temperature_task(void * thread_param);
+void *temperature_task(void *thread_param);
 
 /**
  * @brief Initializes the light sensor
@@ -66,12 +64,12 @@ void * temperature_task(void * thread_param);
  * Sets up periodic timer to log light data
  *
  */
-void * light_task(void * thread_param);
+void *light_task(void *thread_param);
 
 int thread_param_init(thread_param_t *param);
 
-logged_data_t * add_to_bdqueue(bdqueue * queue,data_header_type_t type);
+logged_data_t *add_to_bdqueue(bdqueue *queue, data_header_type_t type);
 
-int queue_init(bdqueue ** queue);
+int queue_init(bdqueue **queue);
 
-void printQ(logged_data_t * msg);
+void printQ(logged_data_t *msg);

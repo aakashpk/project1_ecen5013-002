@@ -16,27 +16,23 @@
 #define LIGHT_MIN 50
 
 // Temperature unit conversion
-#define TODEGK(c) ((c)+273)
-#define TODEGF(c) (((c)*9/5)+32)
+#define TODEGK(c) ((c) + 273)
+#define TODEGF(c) (((c)*9 / 5) + 32)
 
-time_t t; // For random data 
-
+time_t t; // For random data
 
 /**
  * @brief Get the temp object
- * 
- * @return float 
+ *
+ * @return float
  */
 float get_temp(uint8_t unit);
 
 /**
  * @brief Get the light object
- * 
- * @return float 
+ *
+ * @return float
  */
 float get_light();
-
-
-
 
 #endif

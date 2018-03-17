@@ -20,7 +20,6 @@ typedef struct
 
 // Non-Blocking functions
 
-
 /*
    Wondering if element_size and total_elements should be passed through pointer,
    or as separate arguments. Could be dangerous and confusing for users if
@@ -33,16 +32,13 @@ typedef struct
    https://stackoverflow.com/questions/227897/how-to-allocate-aligned-memory-only-using-the-standard-library
    Initializes pointers and mask Returns error status
    */
-queue_status bdqueue_init(bdqueue* q, size_t element_size, size_t total_elements);
-
-
+queue_status bdqueue_init(bdqueue *q, size_t element_size, size_t total_elements);
 
 /*
    note, this should be done last after threads depending on queue are killed.
    frees memory
    */
 queue_status bdqueue_destroy(bdqueue *q);
-
 
 /*
    Called by requester.
@@ -51,21 +47,20 @@ queue_status bdqueue_destroy(bdqueue *q);
    */
 uint8_t *bdqueue_next_empty_request(bdqueue *q);
 
-
 /*
     Called by requester
 */
-void bdqueue_done_writing_request(bdqueue* q);
+void bdqueue_done_writing_request(bdqueue *q);
 
 /*
    Called by responder
    */
-void bdqueue_done_reading_request_and_writing_response(bdqueue* q);
+void bdqueue_done_reading_request_and_writing_response(bdqueue *q);
 
 /*
    Called by requester
    */
-void bdqueue_done_reading_response(bdqueue* q);
+void bdqueue_done_reading_response(bdqueue *q);
 
 // Potentially blocking functions
 
@@ -73,10 +68,10 @@ void bdqueue_done_reading_response(bdqueue* q);
    Called by responder
    Provides pointer to next available request for responder to read
    */
-uint8_t* bdqueue_next_request(bdqueue* q, bool force_noblock);
+uint8_t *bdqueue_next_request(bdqueue *q, bool force_noblock);
 
 /*
    Called by requester
    Provides pointer to next available response for requester to read
    */
-uint8_t* bdqueue_next_response(bdqueue* q, bool force_noblock);
+uint8_t *bdqueue_next_response(bdqueue *q, bool force_noblock);
