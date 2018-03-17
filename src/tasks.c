@@ -9,15 +9,49 @@
 
 #include "tasks.h"
 
-logged_data_t * add_to_bdqueue(bdqueue ** queue)
+char* data_header_type_strings[] = {
+    "Heartbeat",
+    "Temperature",
+    "Light",
+};
+
+logged_data_t * add_to_bdqueue(bdqueue * queue,data_header_type_t type)
 {
     logged_data_t * msg;    
-    msg = (logged_data_t*)bdqueue_next_empty_request(*queue);
-    msg->type = 1;
-    bdqueue_done_writing_request(*queue);
+    msg = (logged_data_t*)bdqueue_next_empty_request(queue);
+    msg->type = type;
+    msg->req_time=time(NULL);
+    bdqueue_done_writing_request(queue);
         
-    msg = (logged_data_t*)bdqueue_next_response(*queue, false);
-    //bdqueue_done_reading_response(param1.temp_q);
+    msg = (logged_data_t*)bdqueue_next_response(queue, false);
+    //bdqueue_done_reading_response(queue);
+    
+    return msg;
+}
+
+
+logged_data_t * bdqueue_response(bdqueue * queue,data_header_type_t type)
+{
+    logged_data_t * msg; 
+    msg = (logged_data_t*)bdqueue_next_request(queue, false);
+    msg->res_time=time(NULL); 
+
+    switch (type)
+    {
+        case HEARTBEAT:
+            msg->temperature.value=0;
+            break;
+        case TEMPERATURE:
+            msg->temperature.value=get_temp(0);
+            break;
+        case LIGHT:
+            msg->light.value=get_light();
+            break;
+    }
+
+    bdqueue_done_reading_request_and_writing_response(queue);
+    
+    return msg;
 }
 
 int thread_param_init(thread_param_t *param)
@@ -50,17 +84,17 @@ int queue_init(bdqueue ** queue)
     return 0;
 }
 
-/**
- * @brief Initializes the light sensor
- * this will also do the startup test to see if I2C comms
- * is working
- * and sets up timer to periodically log temperature
- * 
- * 
- */
+
+void printQ(logged_data_t * msg)
+{
+    printf("req time:%ld resp time:%ld type:%s value:%lf \n",
+            msg->req_time,msg->res_time,data_header_type_strings[msg->type],msg->light.value);
+}
+
+
 void * temperature_task(void * thread_param)
 {
-
+    
     #ifdef BBB
     if(temp_sensor_init()==0) LOG_STR("Temp Sensor Self Test Done\n");
     else 
@@ -69,35 +103,24 @@ void * temperature_task(void * thread_param)
         exit(1);
     }
     #endif
-
-    thread_param_t * p1= (thread_param_t*)thread_param;
-    logged_data_t *msg;
     
+    thread_param_t * p1= (thread_param_t*)thread_param;
+        
     while(p1->keep_thread_alive)
     {
-        // Responder / Sensor Task
-        msg = (logged_data_t*)bdqueue_next_request(p1->temp_q, false);
-        //msg->type= 1;
-        msg->timestamp=time(NULL);
-        msg->value=get_temp(0);
+        
+        bdqueue_response(p1->temp_q,TEMPERATURE);
 
-        bdqueue_done_reading_request_and_writing_response(p1->temp_q);
-
-        //printf("ts:[%d] val:%lf type:T \n",msg->timestamp,msg->value);
-        //sleep(1);
     }
+
+    bdqueue_destroy(p1->temp_q);
     return NULL;
 }
 
-/**
- * @brief Initializes the light sensor
- * Does the startup test, and checks the sensor id
- * Sets up periodic timer to log light data 
- * 
- */
+
 void * light_task(void * thread_param)
 {
-
+    
     #ifdef BBB
     if(light_sensor_init()==0) LOG_STR("Light Sensor Self Test Done\n");
     else 
@@ -106,25 +129,17 @@ void * light_task(void * thread_param)
         exit(1);
     }
     #endif
-
     
-
     thread_param_t * p1= (thread_param_t*)thread_param;
-    logged_data_t *msg;
-
+    
     while(p1->keep_thread_alive)
     {
-        msg = (logged_data_t*)bdqueue_next_request(p1->light_q, false);
-        //msg->type= 1;
-        msg->timestamp=time(NULL);
-        msg->value=get_light();
-
-        bdqueue_done_reading_request_and_writing_response(p1->light_q);
-
-        //printf("ts:[%d] val:%lf type:L  \n",msg->timestamp,msg->value);
-
-        //sleep(1);
+        bdqueue_response(p1->light_q,LIGHT);
+        
     }
+    
+     bdqueue_destroy(p1->light_q);
+    
     return NULL;
 
 }

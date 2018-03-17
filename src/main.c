@@ -44,7 +44,11 @@ int main(int argc, char **argv)
     
     if(thread_param_init(&param1)<0) 
         printf("Thread Param Init Failed\n");
-    
+
+    // Copy log file into prameter structure
+    param1.logfile_name=malloc(strlen(logfilename));
+    strcpy(param1.logfile_name,logfilename); 
+
     // Spawn the threads for the different tasks
     //
 
@@ -52,54 +56,36 @@ int main(int argc, char **argv)
     
     // Array with functions for each of the tasks
     void * thread_functions[THREAD_NUMBER] ={socket_thread,temperature_task,light_task};
-
-    // Array with parameters to be passed for each of these tasks
-    // Maintain same order between the 2 arrays
-    void * thread_parameters[THREAD_NUMBER] = {(void *)&param1,(void *)&param1,(void *)&param1};
     
-    // TODO:
-    //Create logger thread
-    //create system logging thread
-    
+    // TODO:Create logger thread
 
- 
     for(int i=0;i<THREAD_NUMBER;i++)
     {
-        if(pthread_create(&threadIDs[i],NULL,thread_functions[i],thread_parameters[i])!=0)
+        if(pthread_create(&threadIDs[i],NULL,thread_functions[i],(void *)&param1)!=0)
 		    printf("Thread %d creation failed\n",i);
 
         else 
             printf("Thread created with ID %ld\n",threadIDs[i]);
     }
 
-    logged_data_t * msg_temp,*msg_light;
+    logged_data_t * msg_temp,*msg_light,*msg_hb;
 
     // Periodic requests for data from the sensor tasks
+    // TODO:Set this up with a timer , atleast the hearbeat has to be on timer
     while(1)
     {
-        // Main request for temp sensor
-        // Requester / Main Task
+        //heartbeat
+        msg_hb=add_to_bdqueue(param1.temp_q,HEARTBEAT);
+        bdqueue_done_reading_response(param1.temp_q);
+        printQ(msg_hb);
 
-        //msg_temp = add_to_bdqueue(param1.temp_q);
-        msg_temp = (logged_data_t*)bdqueue_next_empty_request(param1.temp_q);
-        msg_temp->type = 1;
-        bdqueue_done_writing_request(param1.temp_q);
-        
-        msg_temp = (logged_data_t*)bdqueue_next_response(param1.temp_q, false);
-        
-        printf("Q type:%d ts:%ld value:%lf \n",
-            msg_temp->type,msg_temp->timestamp,msg_temp->value);
+        // Main request for temp sensor
+        msg_temp = add_to_bdqueue(param1.temp_q,TEMPERATURE);
+        printQ(msg_temp);
 
         // main request for light sensor
-        msg_light = (logged_data_t*)bdqueue_next_empty_request(param1.light_q);
-        msg_light->type = 2;
-        bdqueue_done_writing_request(param1.light_q);
-        
-        msg_light = (logged_data_t*)bdqueue_next_response(param1.light_q, false);
-        
-        printf("Q type:%d ts:%ld value:%lf \n",
-            msg_light->type,msg_light->timestamp,msg_light->value);
-        
+        msg_light = add_to_bdqueue(param1.light_q,LIGHT);
+        printQ(msg_light);
         
         sleep(1);
     }
@@ -109,6 +95,9 @@ int main(int argc, char **argv)
     {
         pthread_join(threadIDs[i],NULL);
     }
+
+    free(param1.temp_q);
+    free(param1.light_q);
 
     return 0;
     
