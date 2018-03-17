@@ -4,4 +4,5 @@ project1
 *.out
 *.log
 *.swp
-
+.vscode/c_cpp_properties.json
+.vscode/launch.json
