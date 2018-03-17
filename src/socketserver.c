@@ -6,7 +6,10 @@
  * @author Miles Frain
  * @date 2018-03-12
  */
+
 #include "socketserver.h"
+#include "tasks.h"
+
 
 /*
 Functions to 
@@ -63,9 +66,11 @@ int accept_connection(int socket_fd)
     socklen_t client_name_len;
     int client_socket_fd;
 
+    client_name_len=sizeof(struct sockaddr_un);
+   
     /* Accept a connection. */
     client_socket_fd = accept (socket_fd, (struct sockaddr*)&client_name, &client_name_len);
-
+    
     if(client_socket_fd<0)
     {
         perror("Accept Failed");
@@ -84,20 +89,32 @@ void delete_socket(int socket_fd)
 }
 
 void * socket_thread(void * thread_param)
-{
+{ 
+    thread_param_t * p1;
+    p1=(thread_param_t *)thread_param;
+
     int socket_fd, client_fd;
     char message[20];
     socket_fd=create_socket_server();
     client_fd=accept_connection(socket_fd);
 
+    while(p1->keep_thread_alive)
+    {
     // This has to be replaced with request response code
-    recv(client_fd,message,sizeof(message),0);
+        recv(client_fd,message,sizeof(message),0);
 
-    printf("Received: %s\n",message);
+        if(message[0]=='C')     
+            p1->keep_thread_alive=0;
+
+        sleep(1);
+        
+        printf("Received at [%ld]: %s\n",time(NULL),message);
+
+    }
 
     delete_socket(socket_fd);
 
-    return 0;
+    return NULL;
 
 }
 

@@ -1,6 +1,7 @@
 #include "lightsensor.h"
 
-#define perror {}
+//#define perror {}
+//#define SENSORDEBUG
 
 int8_t light_sensor_init()
 {
@@ -85,7 +86,7 @@ uint16_t read_reg_light_word(uint8_t reg)
     i2c_close(file);
 
     #ifdef SENSORDEBUG
-    printf("Register %x\n",buffer);
+    printf("Light Sensor Register %x\n",buffer);
     #endif
 
     return buffer;
@@ -93,7 +94,13 @@ uint16_t read_reg_light_word(uint8_t reg)
 }
 
 
-
+/**
+ * @brief 
+ * 
+ * @param reg 
+ * @param value 
+ * @return int8_t 
+ */
 int8_t write_reg_light_byte(uint8_t reg,uint8_t value)
 {
     uint8_t file;

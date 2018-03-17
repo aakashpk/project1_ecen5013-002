@@ -57,14 +57,21 @@ int socket_connect(int socket_fd)
 int main()
 {
     int socket_fd;
-    char message[20] = "Hello";
+    char message[20] = "Hello",
+        message1[20] = "Close";
     socket_fd=create_socket_client();
     socket_connect(socket_fd);
 
-    // Add external API request to socket server here
-    printf("Sending: %s\n",message);
+    /*
+    Change this main to have getopt and 
+    send different requests based the parameters passed
 
-    send(socket_fd,message,sizeof(message),0);
+    */
+
+    // Add external API request to socket server here
+    printf("Sending: %s\n",message1);
+
+    send(socket_fd,message1,sizeof(message),0);
    
     close (socket_fd);
     return 0;
