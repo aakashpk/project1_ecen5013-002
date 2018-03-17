@@ -4,10 +4,13 @@
 float get_temp(uint8_t unit)
 {
     float temperature;
-
+    uint16_t reg;
+    
     // read temperature register shift to remove the lagging 0 
     //and convert to degC value
-    temperature=TOTEMPVAL((read_reg_temp(TEMP_VAL)>>4));
+    reg=read_reg_temp(TEMP_VAL);
+    
+    temperature=TOTEMPVAL((reg>>4));
     
     //(((uint16_t)~d)&(uint16_t)0x0FFF)+1
     

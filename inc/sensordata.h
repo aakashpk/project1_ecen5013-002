@@ -13,8 +13,6 @@
 #include "tempsensor.h"
 #include "lightsensor.h"
 
-#include "bidirectional_queue.h"
-
 float get_temp(uint8_t unit);
 
 float get_light();

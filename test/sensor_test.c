@@ -6,9 +6,10 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
+#include "my_i2c.h"
 #include "tempsensor.h"
 #include "lightsensor.h"
-#include "sensortask.h"
+#include "sensordata.h"
 
 /*static void check_read_reg_temp(void)
 {
@@ -21,13 +22,13 @@
  * @param reg 
  * @return int16_t 
  */
-int16_t __wrap_read_reg_temp(uint8_t reg)
+uint16_t __wrap_read_reg_temp(uint8_t reg)
 {
     // allows the calling test to check if the supplied parameters are as expected
     //check_expected(reg);
    
-    return (int16_t)mock();
-}
+    return (uint16_t)mock();
+} 
 
 /**
  * @brief Mocked function for returning light sensor read
@@ -51,7 +52,7 @@ uint16_t __wrap_read_reg_light_word(uint8_t reg)
  */
 static void test_negative_temperature(void **state)
 {
-    will_return(__wrap_read_reg_temp, (uint16_t)0x00E7);
+    will_return(__wrap_read_reg_temp, (uint16_t)0xE700);
 
     assert_true(get_temp(0) == -25.0);
 }
@@ -65,7 +66,7 @@ static void test_negative_temperature(void **state)
 static void test_positive_temperature(void **state)
 {
 
-    will_return(__wrap_read_reg_temp, (uint16_t)0x0F7F);
+    will_return(__wrap_read_reg_temp, (uint16_t)0x7FF0);
 
     assert_true(get_temp(0) == 127.9375);
 }
@@ -93,11 +94,13 @@ static void test_zero_temperature(void **state)
  */
 static void test_light_value(void **state)
 {
-    will_return(__wrap_read_reg_light_word, (uint16_t)0x0010);
+    will_return(__wrap_read_reg_light_word, (uint16_t)0xabcd);
+    will_return(__wrap_read_reg_light_word, (uint16_t)0x1234);
     
-    //printf("%lf",get_light());
+    float f;
+    f=get_light();
     
-    assert_true(get_light() == 4.0);
+    assert_true((int)f == (int)1219.308960);
 }
 
 
