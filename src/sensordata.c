@@ -1,7 +1,7 @@
 #include "sensordata.h"
 #include <math.h>
 
-float get_temp(uint8_t unit)
+float get_temp(temp_unit_t unit)
 {
     float temperature;
     uint16_t reg;

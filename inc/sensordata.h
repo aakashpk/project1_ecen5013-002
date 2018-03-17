@@ -13,7 +13,16 @@
 #include "tempsensor.h"
 #include "lightsensor.h"
 
-float get_temp(uint8_t unit);
+// Unit selection for temperature data
+typedef enum 
+{
+    DEGC,
+    DEGF,
+    DEGK,
+    
+}temp_unit_t;
+
+float get_temp(temp_unit_t unit);
 
 float get_light();
 
