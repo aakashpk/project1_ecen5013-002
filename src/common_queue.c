@@ -13,7 +13,11 @@ size_t pow2_roundup(size_t n)
     // May need to choose clz vs clzll.
     // Start with 0x100...000, then shift this over one less than number of
     // leading zeros of one less than input value.
+    #ifdef ___X86_64__
     return (1UL << (sizeof(size_t) * 8 - 1)) >> (__builtin_clzll(n - 1) - 1);
+    #else
+    return (1UL << (sizeof(size_t) * 8 - 1)) >> (__builtin_clzl(n - 1) - 1);
+    #endif
 }
 
 void init_cv_and_mutex(pthread_cond_t **c, pthread_mutex_t **m)
