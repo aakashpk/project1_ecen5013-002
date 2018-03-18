@@ -91,7 +91,7 @@ void *socket_thread(void *thread_param)
     p1 = (thread_param_t *)thread_param;
 
     int socket_fd, client_fd;
-    char message[20];
+    logged_data_t message;
     socket_fd = create_socket_server();
     client_fd = accept_connection(socket_fd);
 
@@ -101,15 +101,15 @@ void *socket_thread(void *thread_param)
     while (p1->keep_thread_alive)
     {
         // This has to be replaced with request response code
-        recv(client_fd, message, sizeof(message), 0);
+        recv(client_fd, &message, sizeof(logged_data_t), 0);
 
-        if (message[0] == 'C')
-            p1->keep_thread_alive = 0;
-
+        /*
+        Send this to main and 
+        get response from correct task with the response      
+        */
+        //log_printf(); 
         usleep(100);
 
-        printf("Received at [%ld]: %s\n", time(NULL), message);
-        log_printf("Received at [%ld]: %s\n", time(NULL), message);
     }
 
     delete_socket(socket_fd);
