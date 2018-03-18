@@ -39,6 +39,7 @@ void *log_flush_task(void *arg)
     free(logging_queue_tls);
     free(ls->queues_lock_m);
     printf("Logger Closed\n");
+    return NULL;
 }
 
 void initialize_logger(logger_struct *ls, char *filename)
@@ -69,7 +70,6 @@ void initialize_logger(logger_struct *ls, char *filename)
 
 void destroy_logger(logger_struct *ls)
 {
-    // TODO
     ls->keep_logger_alive=0; // This will kill the logger task
 }
 

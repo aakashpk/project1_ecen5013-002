@@ -77,3 +77,5 @@ void initialize_logger(logger_struct *ls, char *filename);
 void enable_logging_in_thread(logger_struct *ls);
 
 void log_printf(char *fmt, ...);
+
+void destroy_logger(logger_struct *ls);
