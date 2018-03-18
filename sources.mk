@@ -14,8 +14,9 @@ BBB_SOURCES=src/tempsensor.c\
 
 HOST_SOURCES=src/dummydata.c
 
-TEST_SOURCES=test/sensor_test.c\
-#	test/simple_test.c
+SENSOR_TEST_SOURCE:=test/sensor_test.c
+
+TEST_SOURCES=test/simple_test.c
 
 CLIENT_SOURCES=src/socketclient.c
 

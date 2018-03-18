@@ -35,7 +35,7 @@ BBB_OBJECTS=$(BBB_SOURCES:.c=.o)
 HOST_OBJECTS=$(HOST_SOURCES:.c=.o)
 CLIENT_OBJECTS=$(CLIENT_SOURCES:.c=.o)
 
-TEST_TARGETS=$(TEST_SOURCES:.c=.test)
+TEST_TARGETS=$(TEST_SOURCES:.c=.test) $(SENSOR_TEST_SOURCE:.c=.test)
 
 # Change compiler and files if cross compiling for BBB/BBG\
 also removes the I2C sensor files\
@@ -73,13 +73,34 @@ endif
 
 #rule to run unit tests
 test: $(TEST_TARGETS)
-	./$^
+	for x in $^; do ls ./$$x; done
 
 # generates executable for each unit test file\
 and runs them
 %.test:%.c $(BBB_OBJECTS) $(COMMON_OBJECTS)
+	$(warning in test creation)
+	$(warning $@-)
+	$(warning $<-)
+	$(warning $(SENSOR_TEST_SOURCE)-)
+#ifeq ($<,$(SENSOR_TEST_SOURCE))
+#	@echo prereq target is ... [$<]
+	$(shell @if [[ $@ == $@ ]] ; then echo success; fi;)
+#	echo 'hi'
+#	if [ "$@" == "test/sensor_test.c" ]; then \
+#		echo yep, they are equal; \
+#	else \
+#		echo no, they are not equal; \
+#	fi
+ifeq ($<,test/sensor_test.c)
+#ifeq (test/sensor_test.c,test/sensor_test.c)
+	$(warning building sensor test)
 	$(CC) $< $(COMMON_OBJECTS) $(BBB_OBJECTS) -o $@ $(CFLAGS) $(INCLUDE) \
 	$(TESTFLAGS) $(WRAPPED_FUNCTIONS)
+else
+	$(warning Not building sensor test)
+	$(CC) $< $(COMMON_OBJECTS) $(BBB_OBJECTS) -o $@ $(CFLAGS) $(INCLUDE) \
+	$(TESTFLAGS)
+endif
 
 clean:
 	rm -f src/*.o test/*.o
