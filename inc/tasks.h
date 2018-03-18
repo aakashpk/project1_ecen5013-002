@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "socketserver.h"
 #include "bidirectional_queue.h"
+#include "message_data_type.h"
 
 #define THREAD_NUMBER 3
 
@@ -24,44 +25,7 @@ typedef struct thread_param
     logger_struct * logger;
 } thread_param_t;
 
-typedef enum {
-    HEARTBEAT,
-    TEMPERATURE,
-    LIGHT,
-} data_header_type_t; // TODO would rather call this message_header_t
 
-typedef enum {
-    SOCKET,
-    MAIN,
-} message_origin_t;
-
-extern char *data_header_type_strings[];
-
-typedef struct
-{
-    data_header_type_t type;
-
-    // TODO: Change to timerspec struct for precise time
-    long req_time;
-    long res_time;
-
-    message_origin_t origin;
-
-    union {
-        struct
-        {
-            float value;
-        } temperature;
-        struct
-        {
-            float value;
-        } light;
-        struct
-        {
-            float value;
-        } common; // Easy way to access both sensor values
-    };
-} logged_data_t;
 
 /**
  * @brief Initializes the light sensor
