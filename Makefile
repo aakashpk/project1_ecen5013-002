@@ -74,7 +74,7 @@ endif
 
 #rule to run unit tests
 test: $(TEST_TARGETS) $(WRAPPED_TEST_TARGETS)
-	for x in $^; do ./$$x; echo ----- done test group ----; done
+	for x in $^; do echo --- running --- ./$$x; ./$$x; echo ---- done test group ----; done
 
 # generates executable for each unit test file\
 and runs them

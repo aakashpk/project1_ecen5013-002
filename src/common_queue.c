@@ -311,7 +311,7 @@ queue_status common_queue_init(common_queue_attributes *attr, size_t element_siz
 queue_status common_queue_destroy(common_queue_attributes *attr)
 {
     // Not a critical check, but likely points to an error elsewhere
-    if (attr->buffer_base)
+    if (!attr->buffer_base)
         return QUEUE_FAILURE;
 
     free(attr->buffer_base);
