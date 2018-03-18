@@ -9,6 +9,12 @@
 
 #include "socketclient.h"
 
+char *data_header_type_strings[] = {
+    "Heartbeat",
+    "Temperature",
+    "Light",
+};
+
 /**
  * @brief Open socket client file
  * and return file descriptor
@@ -23,7 +29,10 @@ int create_socket_client()
     socket_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
 
     if (socket_fd < 0)
+    {
         perror("Socket creation Failed");
+        exit(1);
+    }
 
     return socket_fd;
 }
@@ -46,7 +55,7 @@ int socket_connect(int socket_fd)
     if (connect(socket_fd, (struct sockaddr *)&name, SUN_LEN(&name)) < 0)
     {
         perror("Connect Failed");
-        return -1;
+        exit(1);
     }
 
     return 0;
@@ -54,22 +63,46 @@ int socket_connect(int socket_fd)
 
 int main()
 {
+    
+    /* TODO : make the request generic using command line parameters
+    extern char *optarg;
+    extern int optind;
+    int optret;
+
+    // Get Log file name from command line
+    // If not proper format use a default one
+    optret = getopt(argc, argv, "f:");
+
+    if (argc < 3 || optret != 'f')
+    {
+        printf("Usage is project1 -f logfilename\n \
+        File option not proper, using %s\n", logfilename);
+    }
+    else
+        strcpy(logfilename, optarg);
+    */
+
     int socket_fd;
-    char message[20] = "Hello",
-         message1[20] = "Close";
+
+    logged_data_t message, received_message;
     socket_fd = create_socket_client();
     socket_connect(socket_fd);
 
-    /*
-    Change this main to have getopt and
-    send different requests based the parameters passed
-
-    */
 
     // Add external API request to socket server here
-    printf("Sending: %s\n", message1);
+    
+    message.type = TEMPERATURE;
+    message.req_time = time(NULL);
 
-    send(socket_fd, message1, sizeof(message), 0);
+    printf("Requesting: %s at %ld\n",
+        data_header_type_strings[message.type],message.req_time);
+
+    send(socket_fd,&message, sizeof(message), 0);
+
+    recv(socket_fd,&received_message,sizeof(logged_data_t),0);
+
+    printf("Received %lf at %ld",
+        received_message.common.value,received_message.res_time);
 
     close(socket_fd);
     return 0;

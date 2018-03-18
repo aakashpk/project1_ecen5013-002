@@ -9,7 +9,8 @@
 #ifndef SOCKETCLIENT_H
 #define SOCKETCLIENT_H
 
-#include "socket_data_type.h"
+#include "message_data_type.h"
+#include <time.h>
 
 /*
 Functions for
