@@ -379,44 +379,10 @@ static void test_se_queue_write_read_mostly_full(void **state)
     assert_int_equal(sequeue_destroy(&myq), QUEUE_SUCCESS);
 }
 
+/* Notes for setting up multi-threaded tests to check for blocking,
+although this is a bit advanced for this project.
+*/
 #if 0
-static void test_bd_queue_requester_get_next_empty_request(void **state)
-{
-    // create queue
-    // add a few items
-    // call get_next_empty_request() a few times.
-    // Verify requester write pointer increments and that returned
-    // addresses increment correctly.
-    // Should also verify that address rolls-over correctly
-}
-
-static void test_bd_queue_requester_done_populating_request(void **state)
-{
-    // Verify responder read pointer advances correctly.
-    // Other pointers should not change.
-    // Check for rollover correctness
-}
-
-static void test_bd_queue_responder_get_next_request(void **state)
-{
-    // similar to test_bd_queue_requester_get_next_empty_request()
-}
-
-static void test_bd_queue_responder_done_populating_request(void **state)
-{
-    // similar to test_bd_queue_requester_done_populating_request()
-}
-
-static void test_bd_queue_requester_get_next_response(void **state)
-{
-    // similar to test_bd_queue_requester_get_next_empty_request()
-}
-
-static void test_bd_queue_requester_done_reading_response(void **state)
-{
-    // similar to test_bd_queue_requester_done_populating_request()
-}
-
 /*
  * Note, need to set environment variable for tests to abort for multiple threads.
  * https://api.cmocka.org/
