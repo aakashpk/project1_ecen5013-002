@@ -82,6 +82,7 @@ void delete_socket(int socket_fd)
 {
     close(socket_fd);
     unlink(SOCKET_NAME);
+    printf("Socket Closed\n");
 }
 
 void *socket_thread(void *thread_param)
@@ -105,7 +106,7 @@ void *socket_thread(void *thread_param)
         if (message[0] == 'C')
             p1->keep_thread_alive = 0;
 
-        sleep(1);
+        usleep(100);
 
         printf("Received at [%ld]: %s\n", time(NULL), message);
         log_printf("Received at [%ld]: %s\n", time(NULL), message);
@@ -113,7 +114,7 @@ void *socket_thread(void *thread_param)
 
     delete_socket(socket_fd);
 
-    return NULL;
+    exit(0);
 }
 
 //    send(client_socket_fd,send_message1,sizeof(message_data_t),0);

@@ -1,7 +1,6 @@
 //#define BBB
 
 #include <getopt.h>
-#include "socketserver.h"
 #include <pthread.h>
 #include "tasks.h"
 
@@ -15,7 +14,15 @@
 
 #include "logger.h"
 
-#define THREAD_NUMBER 3
+pthread_t threadIDs[THREAD_NUMBER];
+
+volatile sig_atomic_t keep_main_alive;
+
+void main_sig_handler()
+{
+    printf("\n****Shutting Down****\n");
+    keep_main_alive=0;   
+}
 
 int main(int argc, char **argv)
 {
@@ -37,7 +44,7 @@ int main(int argc, char **argv)
     else
         strcpy(logfilename, optarg);
 
-    printf("Log Filename is %s\n", logfilename);
+    printf("Log Filename is %s PID is %d\n", logfilename, getpid());
 
     logger_struct logger;
     initialize_logger(&logger, logfilename);
@@ -57,14 +64,19 @@ int main(int argc, char **argv)
     // Spawn the threads for the different tasks
     //
 
-    pthread_t threadIDs[THREAD_NUMBER];
-
     // Array with functions for each of the tasks
     void *thread_functions[THREAD_NUMBER] = {socket_thread, temperature_task, light_task};
 
-    // TODO:
-    //Create logger thread
-    //create system logging thread
+    // setting up a signal handler function to close and exit
+    // all the threads
+    struct sigaction signalAction;
+	signalAction.sa_handler = &main_sig_handler;
+
+
+	if((sigaction(SIGUSR1,&signalAction,NULL)==0)&&(sigaction(SIGINT,&signalAction,NULL)==0))
+        printf("Logger signal handler registered\n");
+    else printf("NOt registered");
+
 
     for (int i = 0; i < THREAD_NUMBER; i++)
     {
@@ -88,7 +100,9 @@ int main(int argc, char **argv)
 
     // Periodic requests for data from the sensor tasks
     // TODO:Set this up with a timer , atleast the hearbeat has to be on timer
-    while (1)
+    keep_main_alive=1;
+
+    while (keep_main_alive)
     {
         // Requester / Main Task
 
@@ -130,20 +144,28 @@ int main(int argc, char **argv)
         sleep(1);
     }
 
-    // Wait to join all children threads
-    for (int i = 0; i < THREAD_NUMBER; i++)
-    {
-        pthread_join(threadIDs[i], NULL);
-    }
-
+    //     
+    printf("Closing Tasks\n");
+    kill_tasks((void*)&param1);
     free(param1.temp_q);
     free(param1.light_q);
+    destroy_logger(param1.logger);
+    printf("Everything Closed\n");
+    
+    
+    /*
+    //pthread_join(param1.logger->threadid,NULL);
+    pthread_exit(NULL); 
+   
+    for(int i=1;i<THREAD_NUMBER;i++)
+    {
+        pthread_join(threadIDs[i],NULL);
+    }*/
 
     return 0;
 
 #ifdef BBB
-    // Test code
-    // Code that will execute only on BBB
+    // Test Code that will execute only on BBB
     //temp_sensor_raise_alert();
 
     //while(1)

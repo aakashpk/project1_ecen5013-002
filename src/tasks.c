@@ -15,6 +15,7 @@ char *data_header_type_strings[] = {
     "Light",
 };
 
+
 logged_data_t *dispatch_request(bdqueue *queue, data_header_type_t type)
 {
     logged_data_t *msg = (logged_data_t *)bdqueue_next_empty_request(queue);
@@ -59,11 +60,6 @@ int queue_init(bdqueue **queue)
     return 0;
 }
 
-void printQ(logged_data_t *msg)
-{
-    printf("%p req time:%ld resp time:%ld type:%s value:%lf \n",
-           msg, msg->req_time, msg->res_time, data_header_type_strings[msg->type], msg->light.value);
-}
 
 void *temperature_task(void *thread_param)
 {
@@ -109,7 +105,9 @@ void *temperature_task(void *thread_param)
     }
 
     bdqueue_destroy(p1->temp_q);
-    return NULL;
+    log_printf("Temperature task closed\n");
+
+    exit(0);
 }
 
 void *light_task(void *thread_param)
@@ -153,9 +151,24 @@ void *light_task(void *thread_param)
             msg->common.value);
 
         bdqueue_done_reading_request_and_writing_response(p1->light_q);
+
     }
 
     bdqueue_destroy(p1->light_q);
+    
+    log_printf("Light task closed\n");
+    exit(0);
+}
 
-    return NULL;
+void kill_tasks(void *thread_param)
+{
+    thread_param_t *p1 = (thread_param_t *)thread_param;
+    p1->keep_thread_alive=0;
+}
+
+// Used only during testing
+void printQ(logged_data_t *msg)
+{
+    printf("%p req time:%ld resp time:%ld type:%s value:%lf \n",
+           msg, msg->req_time, msg->res_time, data_header_type_strings[msg->type], msg->light.value);
 }

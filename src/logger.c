@@ -9,8 +9,11 @@ __thread int queue_index_tls;
 
 void *log_flush_task(void *arg)
 {
+
     logger_struct *ls = (logger_struct *)arg;
-    while (1)
+    ls->keep_logger_alive=1;
+
+    while (ls->keep_logger_alive)
     {
         // Scanning all queues, but could also just stop at
         // first null queue, since we aren't deleting any queues.
@@ -32,6 +35,11 @@ void *log_flush_task(void *arg)
         }
         usleep(1000); // 1 ms sleep
     }
+    // Will exit when keep alive becomes zero
+    fclose(ls->fp);
+    free(logging_queue_tls);
+    free(ls->queues_lock_m);
+    printf("Logger Closed\n");
 }
 
 void initialize_logger(logger_struct *ls, char *filename)
@@ -56,13 +64,14 @@ void initialize_logger(logger_struct *ls, char *filename)
     }
 
     pthread_t tid;
-    pthread_create(&tid, NULL, log_flush_task, ls);
+    ls->threadid=pthread_create(&tid, NULL, log_flush_task, ls);
     //pthread_join(tid, NULL);
 }
 
 void destroy_logger(logger_struct *ls)
 {
     // TODO
+    ls->keep_logger_alive=0; // This will kill the logger task
 }
 
 void enable_logging_in_thread(logger_struct *ls)

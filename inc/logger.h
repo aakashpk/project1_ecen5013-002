@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "single_ended_queue.h"
 
@@ -32,6 +33,9 @@ typedef struct
     pthread_mutex_t *queues_lock_m;
     FILE *fp;
     // No log rotation for this version of project
+
+    pid_t threadid ;
+    volatile sig_atomic_t keep_logger_alive; // To shutdown the thread
 } logger_struct;
 
 // Could eventually convert to singleton, but that's low priority now.

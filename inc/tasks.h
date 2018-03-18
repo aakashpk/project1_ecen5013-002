@@ -7,6 +7,9 @@
 #endif
 
 #include "logger.h"
+#include "socketserver.h"
+
+#define THREAD_NUMBER 3
 
 typedef struct thread_param
 {
@@ -15,9 +18,8 @@ typedef struct thread_param
 
     char *logfile_name;
 
-    // Can use sig_atomic_t if this was being
-    // modified in any more complicated manner
-    volatile int keep_thread_alive;
+    // Atomic volatile to kill thread from main
+    volatile sig_atomic_t keep_thread_alive;
     logger_struct * logger;
 } thread_param_t;
 
@@ -85,3 +87,5 @@ logged_data_t *add_to_bdqueue(bdqueue *queue, data_header_type_t type);
 int queue_init(bdqueue **queue);
 
 void printQ(logged_data_t *msg);
+
+void kill_tasks(void *thread_param);
