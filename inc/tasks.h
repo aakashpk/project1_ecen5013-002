@@ -25,7 +25,12 @@ typedef enum {
     HEARTBEAT,
     TEMPERATURE,
     LIGHT,
-} data_header_type_t;
+} data_header_type_t; // TODO would rather call this message_header_t
+
+typedef enum {
+    SOCKET,
+    MAIN,
+} message_origin_t;
 
 extern char *data_header_type_strings[];
 
@@ -36,6 +41,8 @@ typedef struct
     // TODO: Change to timerspec struct for precise time
     long req_time;
     long res_time;
+
+    message_origin_t origin;
 
     union {
         struct

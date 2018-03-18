@@ -1,9 +1,11 @@
 #include "logger.h"
 
 // TLS members
-// Todo - may need extern and/or static
 __thread sequeue *logging_queue_tls;
 __thread int queue_index_tls;
+
+
+// TODO signal hander
 
 void *log_flush_task(void *arg)
 {
@@ -56,6 +58,11 @@ void initialize_logger(logger_struct *ls, char *filename)
     pthread_t tid;
     pthread_create(&tid, NULL, log_flush_task, ls);
     //pthread_join(tid, NULL);
+}
+
+void destroy_logger(logger_struct *ls)
+{
+    // TODO
 }
 
 void enable_logging_in_thread(logger_struct *ls)
