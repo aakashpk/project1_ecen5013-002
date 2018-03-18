@@ -7,8 +7,6 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#include "bidirectional_queue.h"
-
 #define TEMP_MAX 35
 #define TEMP_MIN 15
 
