@@ -2,7 +2,8 @@
  * @brief Common Queue functions and structs used by both single and double-ended queues
  *
  * @file common_queue.h
- * @author Aakash Kumar @author Miles Frain
+ * @author Aakash Kumar
+ * @author Miles Frain
  * @date 2018-03-17
  */
 #pragma once
