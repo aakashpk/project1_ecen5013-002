@@ -10,7 +10,7 @@
 #ifndef SOCKETSERVER_H
 #define SOCKETSERVER_H
 
-#include "socket_data_type.h"
+#include "message_data_type.h"
 
 /*
 Functions to

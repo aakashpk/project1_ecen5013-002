@@ -8,6 +8,7 @@
 
 #include "logger.h"
 #include "socketserver.h"
+#include "bidirectional_queue.h"
 
 #define THREAD_NUMBER 3
 

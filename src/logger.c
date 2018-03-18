@@ -5,7 +5,6 @@ __thread sequeue *logging_queue_tls;
 __thread int queue_index_tls;
 
 
-// TODO signal hander
 
 void *log_flush_task(void *arg)
 {
