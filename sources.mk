@@ -17,7 +17,7 @@ HOST_SOURCES=src/dummydata.c
 WRAPPED_TEST_SOURCES:=test/sensor_test.c
 
 TEST_SOURCES=test/simple_test.c \
-		   test/bd_queue_test.c
+		   test/queue_test.c
 
 CLIENT_SOURCES=src/socketclient.c
 
