@@ -40,7 +40,8 @@ int create_socket_server(void);
 int accept_connection(int socket_fd);
 
 /**
- * @brief
+ * @brief Creates the socket task thread
+ * accepts connection and sends back data to client
  *
  * @param thread_param
  * @return int

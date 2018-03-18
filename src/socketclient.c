@@ -1,5 +1,6 @@
 /**
- * @brief
+ * @brief Socket client requests
+ * 
  *
  * @file socketclient.c
  * @author Aakash Kumar

@@ -1,3 +1,12 @@
+/**
+ * @brief Thread creation functions for the 
+ * Sensor tasks 
+ * 
+ * @file tasks.h
+ * @author Aakash Kumar 
+ * @author Miles Frain 
+ * @date 2018-03-17
+ */
 #pragma once
 
 #ifdef BBB
@@ -44,12 +53,37 @@ void *temperature_task(void *thread_param);
  */
 void *light_task(void *thread_param);
 
+/**
+ * @brief initializes parameter variable to be passed 
+ * into the thread creation functions
+ * 
+ * @param param 
+ * @return int 
+ */
 int thread_param_init(thread_param_t *param);
 
-logged_data_t *add_to_bdqueue(bdqueue *queue, data_header_type_t type);
 
+logged_data_t *dispatch_request(bdqueue *queue, data_header_type_t type);
+
+/**
+ * @brief Initializes a queue from the bdqueue 
+ * give the pointer to the head
+ * 
+ * @param queue pointer to the queue within the
+ * parameter structure
+ * 
+ * @return int 0 if success, -1 for failure
+ */
 int queue_init(bdqueue **queue);
 
+// Unused in final usage, only used for testing
 void printQ(logged_data_t *msg);
 
+
+/**
+ * @brief  Clears the keep alive variable 
+ * killing the sensor taks threads
+ * 
+ * @param thread_param 
+ */
 void kill_tasks(void *thread_param);

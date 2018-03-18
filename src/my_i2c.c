@@ -1,3 +1,11 @@
+/**
+ * @brief I2C file opeartions
+ * 
+ * @file my_i2c.c
+ * @author Aakash Kumar 
+ * @author Miles Frain 
+ * @date 2018-03-17
+ */
 #include "my_i2c.h"
 
 int8_t i2c_open()

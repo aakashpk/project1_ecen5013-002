@@ -1,3 +1,10 @@
+/**
+ * @brief Sensor data operations
+ * 
+ * @file sensordata.c
+ * @author Aakash Kumar @author Miles Frain 
+ * @date 2018-03-17
+ */
 #include "sensordata.h"
 #include <math.h>
 

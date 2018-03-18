@@ -1,3 +1,11 @@
+/**
+ * @brief Data types for message passing between threads
+ * 
+ * @file message_data_type.h
+ * @author Aakash Kumar
+ * @author Miles Frain
+ * @date 2018-03-17
+ */
 #pragma once
 
 #include <fcntl.h>

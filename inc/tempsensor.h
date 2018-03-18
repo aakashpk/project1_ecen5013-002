@@ -1,3 +1,11 @@
+/**
+ * @brief Read and write from the temperature sensor
+ * registers
+ * 
+ * @file tempsensor.h
+ * @author Aakash Kumar @author Miles Frain 
+ * @date 2018-03-17
+ */
 #ifndef TEMPSENSOR_H
 #define TEMPSENSOR_H
 
@@ -56,13 +64,18 @@ uint16_t read_reg_temp(uint8_t reg);
 int8_t temp_sensor_init(void);
 
 /**
- * @brief
+ * @brief Write a register in the temperature sensor
  *
- * @param reg
- * @param value
+ * @param reg register to be written
+ * @param value 0 for success, -1 for failure
  */
 int8_t write_reg_temp(uint8_t reg, uint16_t value);
 
+/**
+ * @brief raise alert on the sensor by
+ * reducing the THIGH value to below the currently read value
+ * 
+ */
 void temp_sensor_raise_alert();
 
 #endif

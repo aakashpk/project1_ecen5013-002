@@ -1,3 +1,11 @@
+/**
+ * @brief Logger opeartions
+ * 
+ * @file logger.c
+ * @author Aakash Kumar 
+ * @author Miles Frain 
+ * @date 2018-03-17
+ */
 #include "logger.h"
 
 // TLS members

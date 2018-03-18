@@ -1,3 +1,11 @@
+/**
+ * @brief Light sensor operations
+ * 
+ * @file lightsensor.c
+ * @author Aakash Kumar
+ * @author Miles Frain
+ * @date 2018-03-17
+ */
 #include "lightsensor.h"
 
 //#define perror {}
@@ -95,13 +103,7 @@ uint16_t read_reg_light_word(uint8_t reg)
     return buffer;
 }
 
-/**
- * @brief
- *
- * @param reg
- * @param value
- * @return int8_t
- */
+
 int8_t write_reg_light_byte(uint8_t reg, uint8_t value)
 {
     uint8_t file;

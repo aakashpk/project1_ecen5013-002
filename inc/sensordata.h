@@ -1,14 +1,16 @@
-#ifndef SENSOR_DATA_H
-#define SENSOR_DATA_H
-
 /**
- * @brief 
+ * @brief Sensor Data read functions 
+ * for temperature and light sensors
  * 
  * @file sensordata.h
  * @author Aakash Kumar
  * @author Miles Frain
- * @date 2018-03-16
+ * @date 2018-03-17
  */
+
+#ifndef SENSOR_DATA_H
+#define SENSOR_DATA_H
+
 
 #include "tempsensor.h"
 #include "lightsensor.h"
