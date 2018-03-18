@@ -219,79 +219,107 @@ static void test_bd_queue_request_response_mostly_full(void **state)
 
     assert_int_equal(bdqueue_destroy(&myq), QUEUE_SUCCESS);
 }
-#if 0
 
-    myq = NULL;
+// ----------- Single Ended Tests -------------------
 
-    // ------- Single-ended test
+static void test_se_queue_init(void **state)
+{
+    sequeue myq;
 
-    sequeue *myseq = malloc(sizeof(sequeue));
+    // Initialize with non-exact power of 2 size
+    assert_int_equal(sequeue_init(&myq, 3, 5), QUEUE_SUCCESS);
+}
 
-    if (sequeue_init(myseq, 3, 5) == QUEUE_FAILURE)
+static void test_se_queue_memory_allignment(void **state)
+{
+    sequeue myq;
+    assert_int_equal(sequeue_init(&myq, 3, 5), QUEUE_SUCCESS);
+
+    // Testing correctness of memory allignment
+    assert_int_equal((uintptr_t)myq.attr.buffer_base % (pow2_roundup(3) * pow2_roundup(5)), 0);
+    assert_int_equal((uintptr_t)myq.attr.buffer_base % myq.attr.element_size, 0);
+}
+
+static void test_se_queue_destroy(void **state)
+{
+    sequeue myq;
+    assert_int_equal(sequeue_init(&myq, 3, 5), QUEUE_SUCCESS);
+    assert_int_equal(sequeue_destroy(&myq), QUEUE_SUCCESS);
+}
+
+static void test_se_queue_element_increment(void **state)
+{
+    sequeue myq;
+    assert_int_equal(sequeue_init(&myq, 3, 5), QUEUE_SUCCESS);
+
+    uint8_t *pos = myq.attr.buffer_base;
+    for (int i = 0; i < 8; i++)
     {
-        printf("failed init\n");
+        assert_ptr_equal(sequeue_next_empty(&myq, true), pos);
+        pos += myq.attr.element_size;
+    }
+    assert_int_equal(sequeue_destroy(&myq), QUEUE_SUCCESS);
+}
+
+static void test_se_queue_element_increment_after_destroy(void **state)
+{
+    sequeue myq;
+    assert_int_equal(sequeue_init(&myq, 3, 5), QUEUE_SUCCESS);
+
+    uint8_t *pos = myq.attr.buffer_base;
+    for (int i = 0; i < 8; i++)
+    {
+        assert_ptr_equal(sequeue_next_empty(&myq, true), pos);
+        pos += myq.attr.element_size;
+    }
+    assert_int_equal(sequeue_destroy(&myq), QUEUE_SUCCESS);
+
+    assert_int_equal(sequeue_init(&myq, 3, 5), QUEUE_SUCCESS);
+
+    pos = myq.attr.buffer_base;
+    for (int i = 0; i < 8; i++)
+    {
+        assert_ptr_equal(sequeue_next_empty(&myq, true), pos);
+        pos += myq.attr.element_size;
+    }
+    assert_int_equal(sequeue_destroy(&myq), QUEUE_SUCCESS);
+}
+
+static void test_se_queue_null_elements_when_full(void **state)
+{
+    sequeue myq;
+    assert_int_equal(sequeue_init(&myq, 3, 5), QUEUE_SUCCESS);
+
+    uint8_t *pos = myq.attr.buffer_base;
+    for (int i = 0; i < 8; i++)
+    {
+        assert_ptr_equal(sequeue_next_empty(&myq, true), pos);
+        pos += myq.attr.element_size;
     }
 
-    printf("head %p\n", myseq->attr.buffer_base);
-    for (int i = 0; i < 10; i++)
+    // Should get null for these
+    for (int i = 0; i < 8; i++)
     {
-        printf("%d %p\n", i, sequeue_next_empty(myseq, true));
+        assert_null(sequeue_next_empty(&myq, true));
     }
 
-    sequeue_destroy(myseq);
+    assert_int_equal(sequeue_destroy(&myq), QUEUE_SUCCESS);
+}
 
-    // Testing above identical code again to see if destory worked
-    if (sequeue_init(myseq, 3, 5) == QUEUE_FAILURE)
-    {
-        printf("failed init\n");
-    }
+static void test_se_queue_write_read_mostly_full(void **state)
+{
+    sequeue myq;
+    assert_int_equal(sequeue_init(&myq, sizeof(example_msg), 5), QUEUE_SUCCESS);
 
-    printf("head %p\n", myseq->attr.buffer_base);
-    for (int i = 0; i < 10; i++)
-    {
-        printf("%d %p\n", i, sequeue_next_empty(myseq, true));
-    }
-
-    sequeue_destroy(myseq);
-
-    if (sequeue_init(myseq, sizeof(example_msg), 5) == QUEUE_FAILURE)
-    {
-        printf("failed init\n");
-    }
-    printf("head %p\n", myseq->attr.buffer_base);
     // Can have up to num_elements - 1 active requests before breaking.
     // Should be able to reach num_elements, but supporting this off-by-one limitation
     // would introduce more complexity and is not worth the effort.
     for (int i = 0; i < 6; i++)
     {
-        uint8_t *data = sequeue_next_empty(myseq, true);
-        printf("empty \t\tpad %d %p\n", i, data);
+        // Writer task head start
 
-        example_msg *msg = (example_msg *)data;
-        msg->send_idx = i;
-        if (i % 2)
-        {
-            msg->type = HEARTBEAT;
-        }
-        else
-        {
-            msg->type = TEMPERATURE;
-        }
-
-        sequeue_done_writing(myseq);
-    }
-
-    for (int i = 100; i < 110; i++)
-    {
-        uint8_t *data;
-        example_msg *msg;
-
-        // Writer task
-
-        data = sequeue_next_empty(myseq, true);
-        printf("\nempty \t\t%d %p\n", i, data);
-
-        msg = (example_msg *)data;
+        example_msg *msg = (example_msg *)sequeue_next_empty(&myq, true);
+        assert_non_null(msg);
         msg->send_idx = i;
         if (i % 2)
         {
@@ -303,19 +331,53 @@ static void test_bd_queue_request_response_mostly_full(void **state)
             msg->type = TEMPERATURE;
             msg->temperature.temp_value = i * 10 + i;
         }
-        sequeue_done_writing(myseq);
+
+        sequeue_done_writing(&myq);
+    }
+
+    for (int i = 6; i < 20; i++)
+    {
+        // Writer task
+
+        example_msg *msg = (example_msg *)sequeue_next_empty(&myq, true);
+        assert_non_null(msg);
+        msg->send_idx = i;
+        if (i % 2)
+        {
+            msg->type = HEARTBEAT;
+            msg->heartbeat.foo = i * 10;
+        }
+        else
+        {
+            msg->type = TEMPERATURE;
+            msg->temperature.temp_value = i * 10 + i;
+        }
+        sequeue_done_writing(&myq);
 
         // Reader task
 
-        msg = (example_msg *)sequeue_read_next(myseq, true);
-        printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void *)msg,
-               example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
+        msg = (example_msg *)sequeue_read_next(&myq, true);
+        assert_non_null(msg);
+        assert_int_equal(msg->send_idx, i - 6);
+        assert_int_equal(msg->type, i % 2 ? HEARTBEAT : TEMPERATURE);
+        switch (msg->type)
+        {
+        case HEARTBEAT:
+            assert_int_equal(msg->heartbeat.foo, (i - 6) * 10);
+            break;
+        case TEMPERATURE:
+            assert_int_equal(msg->temperature.temp_value, (i - 6) * 10 + (i - 6));
+            break;
+        }
 
-        sequeue_done_reading(myseq);
+        //printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void *)msg,
+        //       example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
+
+        sequeue_done_reading(&myq);
     }
 
-    sequeue_destroy(myseq);
-#endif
+    assert_int_equal(sequeue_destroy(&myq), QUEUE_SUCCESS);
+}
 
 #if 0
 static void test_bd_queue_requester_get_next_empty_request(void **state)
@@ -395,6 +457,13 @@ int main(void) {
         cmocka_unit_test(test_bd_queue_element_increment_after_destroy),
         cmocka_unit_test(test_bd_queue_null_elements_when_full),
         cmocka_unit_test(test_bd_queue_request_response_mostly_full),
+        cmocka_unit_test(test_se_queue_init),
+        cmocka_unit_test(test_se_queue_memory_allignment),
+        cmocka_unit_test(test_se_queue_destroy),
+        cmocka_unit_test(test_se_queue_element_increment),
+        cmocka_unit_test(test_se_queue_element_increment_after_destroy),
+        cmocka_unit_test(test_se_queue_null_elements_when_full),
+        cmocka_unit_test(test_se_queue_write_read_mostly_full),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
