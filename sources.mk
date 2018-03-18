@@ -14,7 +14,7 @@ BBB_SOURCES=src/tempsensor.c\
 
 HOST_SOURCES=src/dummydata.c
 
-SENSOR_TEST_SOURCE:=test/sensor_test.c
+WRAPPED_TEST_SOURCES:=test/sensor_test.c
 
 TEST_SOURCES=test/simple_test.c
 
