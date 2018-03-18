@@ -9,7 +9,7 @@
 typedef enum {
     HEARTBEAT,
     TEMPERATURE,
-    LIGHT,
+    //LIGHT,
 } example_msg_types;
 
 char *example_msg_type_strings[] = {
@@ -111,7 +111,7 @@ static void test_bd_queue_element_increment_after_destroy(void **state)
     assert_int_equal(bdqueue_destroy(&myq), QUEUE_SUCCESS);
 }
 
-static void test_bd_queue_null_elemnts_when_full(void **state)
+static void test_bd_queue_null_elements_when_full(void **state)
 {
     bdqueue myq;
     assert_int_equal(bdqueue_init(&myq, 3, 5), QUEUE_SUCCESS);
@@ -132,14 +132,17 @@ static void test_bd_queue_null_elemnts_when_full(void **state)
     assert_int_equal(bdqueue_destroy(&myq), QUEUE_SUCCESS);
 }
 
-#if 0
+static void test_bd_queue_request_response_mostly_full(void **state)
+{
+    bdqueue myq;
+    assert_int_equal(bdqueue_init(&myq, sizeof(example_msg), 5), QUEUE_SUCCESS);
+
     // Can have up to num_elements - 1 active requests before breaking.
     // Should be able to reach num_elements, but supporting this off-by-one limitation
     // would introduce more complexity and is not worth the effort.
     for (int i = 0; i < 6; i++)
     {
-        uint8_t *data = bdqueue_next_empty_request(myq);
-        printf("empty \t\tpad %d %p\n", i, data);
+        uint8_t *data = bdqueue_next_empty_request(&myq);
 
         example_msg *msg = (example_msg *)data;
         msg->send_idx = i;
@@ -152,20 +155,18 @@ static void test_bd_queue_null_elemnts_when_full(void **state)
             msg->type = TEMPERATURE;
         }
 
-        bdqueue_done_writing_request(myq);
+        bdqueue_done_writing_request(&myq);
     }
 
-    for (int i = 100; i < 110; i++)
+    for (int i = 6; i < 20; i++)
     {
-        uint8_t *data;
         example_msg *msg;
 
         // Requester / Main Task
 
-        data = bdqueue_next_empty_request(myq);
-        printf("\nempty \t\t%d %p\n", i, data);
+        msg = (example_msg *)bdqueue_next_empty_request(&myq);
+        assert_non_null(msg);
 
-        msg = (example_msg *)data;
         msg->send_idx = i;
         if (i % 2)
         {
@@ -175,14 +176,13 @@ static void test_bd_queue_null_elemnts_when_full(void **state)
         {
             msg->type = TEMPERATURE;
         }
-        bdqueue_done_writing_request(myq);
+        bdqueue_done_writing_request(&myq);
 
         // Responder / Sensor Task
 
-        data = bdqueue_next_request(myq, false);
-        printf("request \t%d %p\n", i, data);
+        msg = (example_msg *)bdqueue_next_request(&myq, false);
+        assert_non_null(msg);
 
-        msg = (example_msg *)data;
         msg->response_idx = i;
         switch (msg->type)
         {
@@ -193,17 +193,33 @@ static void test_bd_queue_null_elemnts_when_full(void **state)
             msg->temperature.temp_value = i * 10 + i;
             break;
         }
-        bdqueue_done_reading_request_and_writing_response(myq);
+        bdqueue_done_reading_request_and_writing_response(&myq);
 
         // Requester / Main Task
-        msg = (example_msg *)bdqueue_next_response(myq, false);
-        printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void *)msg,
-               example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
+        msg = (example_msg *)bdqueue_next_response(&myq, false);
+        assert_non_null(msg);
+        assert_int_equal(msg->send_idx, i - 6);
+        assert_int_equal(msg->response_idx, i);
+        assert_int_equal(msg->type, i % 2 ? HEARTBEAT : TEMPERATURE);
+        switch (msg->type)
+        {
+        case HEARTBEAT:
+            assert_int_equal(msg->heartbeat.foo, i * 10);
+            break;
+        case TEMPERATURE:
+            assert_int_equal(msg->temperature.temp_value, i * 10 + i);
+            break;
+        }
 
-        bdqueue_done_reading_response(myq);
+        //printf("response \t%d %p: %s, send_idx %u, resp_idx %u\n", i, (void *)msg,
+        //       example_msg_type_strings[msg->type], msg->send_idx, msg->response_idx);
+
+        bdqueue_done_reading_response(&myq);
     }
 
-    bdqueue_destroy(myq);
+    assert_int_equal(bdqueue_destroy(&myq), QUEUE_SUCCESS);
+}
+#if 0
 
     myq = NULL;
 
@@ -377,7 +393,8 @@ int main(void) {
         cmocka_unit_test(test_bd_queue_destroy),
         cmocka_unit_test(test_bd_queue_element_increment),
         cmocka_unit_test(test_bd_queue_element_increment_after_destroy),
-        cmocka_unit_test(test_bd_queue_null_elemnts_when_full),
+        cmocka_unit_test(test_bd_queue_null_elements_when_full),
+        cmocka_unit_test(test_bd_queue_request_response_mostly_full),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
