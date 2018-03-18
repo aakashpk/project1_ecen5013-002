@@ -1,3 +1,12 @@
+/**
+ * @brief Logging library
+ *
+ * @file logger.h
+ * @author Aakash Kumar
+ * @author Miles Frain
+ * @date 2018-03-17
+ */
+
 #pragma once
 
 #include <stdio.h>
@@ -9,20 +18,18 @@
 #include "single_ended_queue.h"
 
 /*
- * Notes from arch diagram
- *
- * Initialization of primary logging thread in main Thread-local
- * storage of logging queue in each thread Each logging queue is
- * registered with main logger (either through global logging
- * pointer, or logger pointer passed into each thread).  Logging
- * posts by thread should not be blocking. Consuming log messages
- * from thread's queue handled by logger thread.
+ * Initialization of primary logging thread in main Thread-local storage of
+ * logging queue in each thread. Each logging queue is registered with main
+ * logger (either through global logging pointer, or logger pointer passed into
+ * each thread). Logging posts by thread should not be blocking. Consuming log
+ * messages from thread's queue handled by logger thread.
  * Was considering using single condition variable for notifying logger upon
  * adding records. Will cause minimal blocking if multiple threads attempt to
  * signal simultaniously. Although simple polling seems better as described in
  * log_flush_task() notes.
  */
 
+// Maximum number of logging queues / tasks which can post logs
 #define MAX_QUEUES 256
 
 typedef struct
@@ -41,7 +48,9 @@ typedef struct
 // Could eventually convert to singleton, but that's low priority now.
 //logger_struct logger_singleton;
 
+// Maximum length in characters of each log line
 #define MAX_LOG_LINE 256
+// Maximum number of pending logs (queue depth). Rounds up to 64
 #define MAX_PENDING_LOGS 50
 
 /*
@@ -68,14 +77,36 @@ Main logger thread constantly checks each queue
     Delivery latency likey better than blocking, so going with sleep approach to start with.
         Also less complex.
 */
+/**
+ * @brief Logging task as independ thread, which constantly checks queues for new logs to write to file.
+ *
+ * @param arg pointer to logger struct
+ * @return void* NA
+ */
 void *log_flush_task(void *arg);
 
-// Called by main
+/**
+ * @brief Logger initialization function to be called by program entry (main)
+ *
+ * @param ls pointer to logger struct
+ * @param filename name of files to write logs to
+ */
 void initialize_logger(logger_struct *ls, char *filename);
 
-// Must be called by each thread which wishes to log
+/**
+ * @brief Logger initialization function to be called by each thread which wishes to log.
+ *
+ * @param ls pointer to logger struct. This needs to be the same logger struct that was previously initialized by main.
+ */
 void enable_logging_in_thread(logger_struct *ls);
 
+/**
+ * @brief Printf-style function for posting logs to file.
+ * This can be called by any thread which previously called initialize_logger().
+ *
+ * @param fmt format string
+ * @param ... optional arguments
+ */
 void log_printf(char *fmt, ...);
 
 void destroy_logger(logger_struct *ls);
