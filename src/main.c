@@ -21,7 +21,7 @@ volatile sig_atomic_t keep_main_alive;
 void main_sig_handler()
 {
     printf("\n****Shutting Down****\n");
-    keep_main_alive=0;   
+    keep_main_alive=0;
 }
 
 int main(int argc, char **argv)
@@ -113,6 +113,7 @@ int main(int argc, char **argv)
             {
                 msg = (logged_data_t*)bdqueue_next_empty_request(all_queues[i]);
                 msg->type = (t == HBEAT) ? HEARTBEAT : queue_types[i];
+                msg->origin = MAIN;
                 msg->req_time = time(NULL);
 
                 // calls snprintf in thread context, so slight delay here.
@@ -133,30 +134,75 @@ int main(int argc, char **argv)
             {
                 while ((msg = (logged_data_t *)bdqueue_next_response(all_queues[i], true)))
                 {
-                    log_printf("Main Response: req %ld, rsp %ld, source %s, msg type %s, value %f\n",
+                    log_printf("Main Response: req %ld, rsp %ld, source %s, msg type %s, value %f, origin %d\n",
                         msg->req_time, msg->res_time, queue_names[i], data_header_type_strings[msg->type],
-                        msg->common.value);
+                        msg->common.value, msg->origin);
+
+                    if (msg->origin == SOCKET)
+                    {
+                        // Send back to socket
+                        // Need to block here, otherwise message is lost
+                        logged_data_t *fwd = (logged_data_t *)sequeue_next_empty(param1.to_socket_q, false);
+
+                        memcpy(fwd, msg, sizeof(logged_data_t));
+
+                        sequeue_done_writing(param1.to_socket_q);
+                    }
                 }
             }
             usleep(1000); // 1ms per read attempt
         }
 
+        // Special handling for socket queue
+        // Check if there are any new socket requests
+        while ((msg = (logged_data_t *)sequeue_read_next(param1.from_socket_q, true)))
+        {
+            if (msg->origin != SOCKET)
+            {
+                log_printf("socket packet with mis-configured origin\n");
+            }
+            // Forward request to appropriate sensor task
+
+            bdqueue *target = NULL;
+            switch (msg->type)
+            {
+            case TEMPERATURE:
+                target = param1.temp_q;
+                break;
+            case LIGHT:
+                target = param1.light_q;
+                break;
+            default:
+                log_printf("No target from socket\n");
+                break;
+            }
+
+            logged_data_t *fwd = (logged_data_t*)bdqueue_next_empty_request(target);
+
+            memcpy(fwd, msg, sizeof(logged_data_t));
+
+            bdqueue_done_writing_request(target);
+
+            sequeue_done_reading(param1.from_socket_q);
+        }
+
+
         sleep(1);
     }
 
-    //     
+    //
     printf("Closing Tasks\n");
     kill_tasks((void*)&param1);
     free(param1.temp_q);
     free(param1.light_q);
     destroy_logger(param1.logger);
     printf("Everything Closed\n");
-    
-    
+
+
     /*
     //pthread_join(param1.logger->threadid,NULL);
-    pthread_exit(NULL); 
-   
+    pthread_exit(NULL);
+
     for(int i=1;i<THREAD_NUMBER;i++)
     {
         pthread_join(threadIDs[i],NULL);

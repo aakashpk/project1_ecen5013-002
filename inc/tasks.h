@@ -1,10 +1,10 @@
 /**
- * @brief Thread creation functions for the 
- * Sensor tasks 
- * 
+ * @brief Thread creation functions for the
+ * Sensor tasks
+ *
  * @file tasks.h
- * @author Aakash Kumar 
- * @author Miles Frain 
+ * @author Aakash Kumar
+ * @author Miles Frain
  * @date 2018-03-17
  */
 #pragma once
@@ -26,6 +26,8 @@ typedef struct thread_param
 {
     bdqueue *temp_q;
     bdqueue *light_q;
+    sequeue *from_socket_q;
+    sequeue *to_socket_q;
 
     char *logfile_name;
 
@@ -54,11 +56,11 @@ void *temperature_task(void *thread_param);
 void *light_task(void *thread_param);
 
 /**
- * @brief initializes parameter variable to be passed 
+ * @brief initializes parameter variable to be passed
  * into the thread creation functions
- * 
- * @param param 
- * @return int 
+ *
+ * @param param
+ * @return int
  */
 int thread_param_init(thread_param_t *param);
 
@@ -66,24 +68,25 @@ int thread_param_init(thread_param_t *param);
 logged_data_t *dispatch_request(bdqueue *queue, data_header_type_t type);
 
 /**
- * @brief Initializes a queue from the bdqueue 
+ * @brief Initializes a queue from the bdqueue
  * give the pointer to the head
- * 
+ *
  * @param queue pointer to the queue within the
  * parameter structure
- * 
+ *
  * @return int 0 if success, -1 for failure
  */
 int queue_init(bdqueue **queue);
+int main_sequeue_init(sequeue **queue);
 
 // Unused in final usage, only used for testing
 void printQ(logged_data_t *msg);
 
 
 /**
- * @brief  Clears the keep alive variable 
+ * @brief  Clears the keep alive variable
  * killing the sensor taks threads
- * 
- * @param thread_param 
+ *
+ * @param thread_param
  */
 void kill_tasks(void *thread_param);

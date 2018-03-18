@@ -91,27 +91,44 @@ void *socket_thread(void *thread_param)
     p1 = (thread_param_t *)thread_param;
 
     int socket_fd, client_fd;
-    logged_data_t message;
+    logged_data_t *message;
     socket_fd = create_socket_server();
     client_fd = accept_connection(socket_fd);
 
     enable_logging_in_thread(p1->logger);
-    log_printf("Socket thread says hi\n");
+    log_printf("--------->Socket thread says hi\n");
 
     while (p1->keep_thread_alive)
     {
+        // Block here until we can get a free spot in queue to write received message to.
+        message = (logged_data_t*)sequeue_next_empty(p1->from_socket_q, false);
+
         // This has to be replaced with request response code
-        recv(client_fd, &message, sizeof(logged_data_t), 0);
-        printf("Request for %s at %ld from %d",
-            data_header_type_strings[message.type],message.req_time,message.origin);
-        
-        
-        send(client_fd,&message,sizeof(message),0);
+        // Write message received from socket directly to queue
+        recv(client_fd, message, sizeof(logged_data_t), 0);
+        log_printf("----->Socket Request for %s at %ld from %d\n",
+               data_header_type_strings[message->type], message->req_time, message->origin);
+
+        // Completed our write
+        sequeue_done_writing(p1->from_socket_q);
+
+        // Non-Blocking check for any new messages received from main
+        while ((message = (logged_data_t*)sequeue_read_next(p1->to_socket_q, true)))
+        {
+            log_printf("-------->Main's response to Socket Request for %s at %ld from %d\n",
+               data_header_type_strings[message->type], message->req_time, message->origin);
+
+            // Send this response to socket client
+            send(client_fd, message, sizeof(message), 0);
+
+            sequeue_done_reading(p1->to_socket_q);
+        }
+
         /*
-        Send this to main and 
-        get response from correct task with the response      
+        Send this to main and
+        get response from correct task with the response
         */
-        //log_printf(); 
+        //log_printf();
         usleep(100);
 
     }

@@ -37,6 +37,12 @@ int thread_param_init(thread_param_t *param)
     if (queue_init(&(param->light_q)) < 0)
         return -1;
 
+    if (main_sequeue_init(&(param->from_socket_q)) < 0)
+        return -1;
+
+    if (main_sequeue_init(&(param->to_socket_q)) < 0)
+        return -1;
+
     // Set thread alive to 1,
     // All threads close out when this goes to 0
     param->keep_thread_alive = 1;
@@ -60,6 +66,21 @@ int queue_init(bdqueue **queue)
     return 0;
 }
 
+int main_sequeue_init(sequeue **queue)
+{
+    *queue = malloc(sizeof(sequeue));
+
+    if (*queue == NULL)
+        return -1;
+
+    if (sequeue_init(*queue, sizeof(logged_data_t), 5) == QUEUE_FAILURE)
+    {
+        printf("Q init failed\n");
+        return -1;
+    }
+
+    return 0;
+}
 
 void *temperature_task(void *thread_param)
 {
@@ -155,7 +176,7 @@ void *light_task(void *thread_param)
     }
 
     bdqueue_destroy(p1->light_q);
-    
+
     log_printf("Light task closed\n");
     exit(0);
 }
