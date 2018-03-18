@@ -102,7 +102,11 @@ void *socket_thread(void *thread_param)
     {
         // This has to be replaced with request response code
         recv(client_fd, &message, sizeof(logged_data_t), 0);
-
+        printf("Request for %s at %ld from %d",
+            data_header_type_strings[message.type],message.req_time,message.origin);
+        
+        
+        send(client_fd,&message,sizeof(message),0);
         /*
         Send this to main and 
         get response from correct task with the response      

@@ -93,6 +93,7 @@ int main()
     
     message.type = TEMPERATURE;
     message.req_time = time(NULL);
+    message.origin=SOCKET;
 
     printf("Requesting: %s at %ld\n",
         data_header_type_strings[message.type],message.req_time);
