@@ -26,7 +26,6 @@ typedef struct thread_param
 } thread_param_t;
 
 
-
 /**
  * @brief Initializes the light sensor
  * this will also do the startup test to see if I2C comms
