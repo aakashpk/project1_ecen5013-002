@@ -24,11 +24,11 @@ int create_socket_server(void)
 {
     //TODO : Change to IP socket
     // socket create function
-    int socket_fd;
-    struct sockaddr_un name;
+    int socket_fd, opt = 1;
+    struct sockaddr_in name;
 
     /* Create the socket. */
-    socket_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (socket_fd < 0)
     {
@@ -36,13 +36,21 @@ int create_socket_server(void)
         return -1;
     }
 
-    /* Indicate that this is a server. */
-    name.sun_family = AF_LOCAL;
-    strcpy(name.sun_path, SOCKET_NAME);
+     // Forcefully attaching socket to the port 8080
+    if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+                                                  &opt, sizeof(opt)))
+    {
+        perror("setsockopt");
+        return -1;
+        //exit(EXIT_FAILURE);
+    }
+    name.sin_family = AF_INET;
+    name.sin_addr.s_addr = INADDR_ANY;
+    name.sin_port = htons( PORT );
 
-    unlink(SOCKET_NAME);
+    //unlink(SOCKET_NAME);
 
-    if (bind(socket_fd, (struct sockaddr *)&name, sizeof(struct sockaddr_un)) < 0)
+    if (bind(socket_fd, (struct sockaddr *)&name, sizeof(name)) < 0)
     {
         perror("Bind Failed");
         return -1;
@@ -57,6 +65,8 @@ int create_socket_server(void)
 
     return socket_fd;
 }
+
+
 
 int accept_connection(int socket_fd)
 {
@@ -78,12 +88,18 @@ int accept_connection(int socket_fd)
     return client_socket_fd;
 }
 
+
+
+
 void delete_socket(int socket_fd)
 {
     close(socket_fd);
-    unlink(SOCKET_NAME);
+    //unlink(SOCKET_NAME);
     printf("Socket Closed\n");
 }
+
+
+
 
 void *socket_thread(void *thread_param)
 {
@@ -93,18 +109,24 @@ void *socket_thread(void *thread_param)
     int socket_fd, client_fd;
     logged_data_t message;
     socket_fd = create_socket_server();
-    client_fd = accept_connection(socket_fd);
 
     enable_logging_in_thread(p1->logger);
-    log_printf("Socket thread says hi\n");
+    log_printf("Socket thread Started\n");
 
     while (p1->keep_thread_alive)
     {
+        log_printf("Waiting for connection\n");
+        client_fd = accept_connection(socket_fd);
+        log_printf("Connection accepted\n");
+        
         // This has to be replaced with request response code
         recv(client_fd, &message, sizeof(logged_data_t), 0);
-        printf("Request for %s at %ld from %d",
+        printf("Request for %s at %ld from %d\n",
             data_header_type_strings[message.type],message.req_time,message.origin);
         
+        // To be changed
+        message.temperature.value=25.0;
+        message.res_time=message.req_time+1;
         
         send(client_fd,&message,sizeof(message),0);
         /*
@@ -112,11 +134,13 @@ void *socket_thread(void *thread_param)
         get response from correct task with the response      
         */
         //log_printf(); 
-        usleep(100);
+        //usleep(100);
 
     }
-
+    
     delete_socket(socket_fd);
+
+    log_printf("Exiting socket thread\n");
 
     exit(0);
 }

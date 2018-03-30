@@ -20,7 +20,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #define SOCKET_NAME "mysocket"
+
+#define PORT 8080
 
 typedef enum {
     HEARTBEAT,

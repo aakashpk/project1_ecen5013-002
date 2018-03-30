@@ -27,7 +27,7 @@ int create_socket_client()
     int socket_fd;
 
     /* Create the socket. */
-    socket_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (socket_fd < 0)
     {
@@ -47,13 +47,20 @@ int create_socket_client()
  */
 int socket_connect(int socket_fd)
 {
-    struct sockaddr_un name;
+    struct sockaddr_in name;
 
-    name.sun_family = AF_LOCAL;
-    strcpy(name.sun_path, SOCKET_NAME);
+    name.sin_family = AF_INET;
+    name.sin_port=htons(PORT);
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if(inet_pton(AF_INET, "127.0.0.1", &name.sin_addr)<=0) 
+    {
+        perror("\nInvalid address/ Address not supported \n");
+        exit(1);
+    }
 
     // Connect the socket.
-    if (connect(socket_fd, (struct sockaddr *)&name, SUN_LEN(&name)) < 0)
+    if (connect(socket_fd, (struct sockaddr *)&name, sizeof(name)) < 0)
     {
         perror("Connect Failed");
         exit(1);
@@ -89,7 +96,17 @@ int main()
     socket_fd = create_socket_client();
     socket_connect(socket_fd);
 
-
+    // test code
+    /*
+    char *hello = "Hello from client";
+    char buffer[1024] = {0};
+    int valread;
+    send(socket_fd , hello , strlen(hello) , 0 );
+    printf("Hello message sent\n");
+    valread = read( socket_fd , buffer, 1024);
+    printf("%s\n",buffer );
+    */
+    
     // Add external API request to socket server here
     
     message.type = TEMPERATURE;
@@ -103,7 +120,7 @@ int main()
 
     recv(socket_fd,&received_message,sizeof(logged_data_t),0);
 
-    printf("Received %lf at %ld",
+    printf("Received %lf at %ld \n",
         received_message.common.value,received_message.res_time);
 
     close(socket_fd);
