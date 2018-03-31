@@ -49,6 +49,12 @@ int create_socket_server(void)
     name.sin_port = htons( PORT );
 
     //unlink(SOCKET_NAME);
+    /*if(inet_pton(AF_INET,IP_ADDRESS, &name.sin_addr)<=0) 
+    {
+        perror("\nInvalid address/ Address not supported \n");
+        exit(1);
+    }*/
+
 
     if (bind(socket_fd, (struct sockaddr *)&name, sizeof(name)) < 0)
     {

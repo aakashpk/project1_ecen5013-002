@@ -51,13 +51,15 @@ int socket_connect(int socket_fd)
 
     name.sin_family = AF_INET;
     name.sin_port=htons(PORT);
+    name.sin_addr.s_addr = INADDR_ANY;
 
     // Convert IPv4 and IPv6 addresses from text to binary form
-    if(inet_pton(AF_INET, "127.0.0.1", &name.sin_addr)<=0) 
+    /*
+    if(inet_pton(AF_INET, IP_ADDRESS, &name.sin_addr)<=0) 
     {
         perror("\nInvalid address/ Address not supported \n");
         exit(1);
-    }
+    }*/
 
     // Connect the socket.
     if (connect(socket_fd, (struct sockaddr *)&name, sizeof(name)) < 0)

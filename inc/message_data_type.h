@@ -23,6 +23,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+#define IP_ADDRESS "127.0.0.1"
+
+
 #define SOCKET_NAME "mysocket"
 
 #define PORT 8080
