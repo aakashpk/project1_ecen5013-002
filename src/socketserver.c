@@ -105,8 +105,6 @@ void delete_socket(int socket_fd)
 }
 
 
-
-
 void *socket_thread(void *thread_param)
 {
     thread_param_t *p1;
@@ -121,20 +119,24 @@ void *socket_thread(void *thread_param)
 
     while (p1->keep_thread_alive)
     {
-        log_printf("Waiting for connection\n");
+        log_printf("Socket Task: Waiting for connection\n");
         client_fd = accept_connection(socket_fd);
-        log_printf("Connection accepted\n");
+        log_printf("Socket Task: Connection accepted\n");
         
         // This has to be replaced with request response code
+        
         recv(client_fd, &message, sizeof(logged_data_t), 0);
-        printf("Request for %s at %ld from %d\n",
-            data_header_type_strings[message.type],message.req_time,message.origin);
+        log_printf("Socket Task: Request for %s at %ld from %d\n",
+            data_header_type_strings[message.type]
+            ,message.req_time,message.origin);
         
         // To be changed
         message.temperature.value=25.0;
         message.res_time=message.req_time+1;
         
         send(client_fd,&message,sizeof(message),0);
+        log_printf("Socket Task: Responded with %lf at %ld\n"
+            ,message.temperature.value,message.res_time);
         /*
         Send this to main and 
         get response from correct task with the response      

@@ -23,8 +23,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
+#ifdef REMOTE
+#define IP_ADDRESS "192.168.7.2"
+#else
 #define IP_ADDRESS "127.0.0.1"
+#endif
+
 
 
 #define SOCKET_NAME "mysocket"
