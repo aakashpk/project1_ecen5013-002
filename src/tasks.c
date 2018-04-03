@@ -41,6 +41,8 @@ int thread_param_init(thread_param_t *param)
     // All threads close out when this goes to 0
     param->keep_thread_alive = 1;
 
+    param->keep_temperature_thread_alive = 1;
+
     return 0;
 }
 
@@ -60,6 +62,18 @@ int queue_init(bdqueue **queue)
     return 0;
 }
 
+void *temperature_kill_task(void *thread_param)
+{
+    thread_param_t *p1 = (thread_param_t *)thread_param;
+
+    enable_logging_in_thread(p1->logger);
+    log_printf("---------- Temperature KILL task started\n");
+
+    log_printf(" --------- Killing temperature task");
+    p1->keep_temperature_thread_alive = 0;
+
+    return NULL;
+}
 
 void *temperature_task(void *thread_param)
 {
@@ -79,7 +93,7 @@ void *temperature_task(void *thread_param)
     enable_logging_in_thread(p1->logger);
     log_printf("Temperature task started\n");
 
-    while (p1->keep_thread_alive)
+    while (p1->keep_thread_alive && p1->keep_temperature_thread_alive)
     {
         logged_data_t *msg = (logged_data_t *)bdqueue_next_request(p1->temp_q, false);
         msg->res_time = time(NULL);
@@ -104,10 +118,11 @@ void *temperature_task(void *thread_param)
         bdqueue_done_reading_request_and_writing_response(p1->temp_q);
     }
 
-    bdqueue_destroy(p1->temp_q);
-    log_printf("Temperature task closed\n");
+    //bdqueue_destroy(p1->temp_q);
+    log_printf("--------  Temperature task closed ------------- \n");
 
-    exit(0);
+    return NULL;
+    //exit(0);
 }
 
 void *light_task(void *thread_param)
@@ -155,7 +170,7 @@ void *light_task(void *thread_param)
     }
 
     bdqueue_destroy(p1->light_q);
-    
+
     log_printf("Light task closed\n");
     exit(0);
 }

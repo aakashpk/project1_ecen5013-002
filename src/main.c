@@ -21,7 +21,7 @@ volatile sig_atomic_t keep_main_alive;
 void main_sig_handler()
 {
     printf("\n****Shutting Down****\n");
-    keep_main_alive=0;   
+    keep_main_alive=0;
 }
 
 int main(int argc, char **argv)
@@ -112,15 +112,18 @@ int main(int argc, char **argv)
             for (rq_theme t = HBEAT; t < THEME_MAX; t++)
             {
                 msg = (logged_data_t*)bdqueue_next_empty_request(all_queues[i]);
-                msg->type = (t == HBEAT) ? HEARTBEAT : queue_types[i];
-                msg->req_time = time(NULL);
+                if (msg)
+                {
+                    msg->type = (t == HBEAT) ? HEARTBEAT : queue_types[i];
+                    msg->req_time = time(NULL);
 
-                // calls snprintf in thread context, so slight delay here.
-                // Would be best to copy args to queue for logger to handle printf formatting.
-                log_printf("Main Request: req %ld, source %s, msg type %s\n",
-                    msg->req_time, queue_names[i], data_header_type_strings[msg->type]);
+                    // calls snprintf in thread context, so slight delay here.
+                    // Would be best to copy args to queue for logger to handle printf formatting.
+                    log_printf("Main Request: req %ld, source %s, msg type %s\n",
+                        msg->req_time, queue_names[i], data_header_type_strings[msg->type]);
 
-                bdqueue_done_writing_request(all_queues[i]);
+                    bdqueue_done_writing_request(all_queues[i]);
+                }
             }
         }
 
@@ -142,21 +145,33 @@ int main(int argc, char **argv)
         }
 
         sleep(1);
+
+        static int temperature_thread_killed = 0;
+        if (!temperature_thread_killed)
+        {
+            temperature_thread_killed = 1;
+            pthread_t temperature_kill_tid;
+            log_printf("---------  Starting temperature kill thread --------------- \n");
+            if (pthread_create(&temperature_kill_tid, NULL, temperature_kill_task, (void *)&param1) != 0)
+                printf("Temperature kill thread creation failed\n");
+            else
+                printf("Thread created with ID %ld\n", temperature_kill_tid);
+        }
     }
 
-    //     
+    //
     printf("Closing Tasks\n");
     kill_tasks((void*)&param1);
     free(param1.temp_q);
     free(param1.light_q);
     destroy_logger(param1.logger);
     printf("Everything Closed\n");
-    
-    
+
+
     /*
     //pthread_join(param1.logger->threadid,NULL);
-    pthread_exit(NULL); 
-   
+    pthread_exit(NULL);
+
     for(int i=1;i<THREAD_NUMBER;i++)
     {
         pthread_join(threadIDs[i],NULL);
