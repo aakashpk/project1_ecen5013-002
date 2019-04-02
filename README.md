@@ -10,7 +10,8 @@ Project 1 for Advanced Principles of Embedded Software ECEN5013-002, Spring 2018
 * `make client PLATFORM=BBB` to build the external socket request client for Beagle Bone
 * Run `make clean` before changing platforms
 * Run `./project1 -f logfilename` to provide a Log file name, if parameters are not proper filename defaults to project1logfile.log
-
+* For running unit tests , first install cmocka by running `apt install libcmocka-dev`
+* Then run `make test`
 
 
 
